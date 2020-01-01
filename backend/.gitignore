@@ -1,0 +1,11 @@
+# Byte-compiled / optimized / DLL files
+.python-version
+__pycache__/
+*.py[cod]
+
+# Deploy
+build/
+dist/
+
+# Environment variables
+.env
