@@ -45,7 +45,8 @@ setup(
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_data={'': ['*.txt', '*.cfg']},
     install_requires=[
-        'pydantic'
+        'pydantic',
+        'tox'
     ],
     python_requires='>=3.7',
     test_suite='tests',

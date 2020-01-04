@@ -4,8 +4,12 @@ __pycache__/
 *.py[cod]
 
 # Deploy
+blockchain.egg-info/
 build/
 dist/
+
+# Tests
+.tox/
 
 # Environment variables
 .env
