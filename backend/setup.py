@@ -42,7 +42,7 @@ setup(
     author_email='sergiodediego@outlook.com',
     url='https://github.com/sdediego/blockchain',
     license='MIT',
-    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+    packages=find_packages(),
     package_data={'': ['*.txt', '*.cfg']},
     install_requires=[
         'pydantic',

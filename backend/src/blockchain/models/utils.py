@@ -23,7 +23,7 @@ def get_utcnow_timestamp():
     return int(datetime.utcnow().timestamp() * 1000)
 
 
-def hash_block(*args):
+def hash_block(*args: tuple):
     """
     Create a unique 256-bit hash value (64 characters length) from the rest
     of the block attributes values with sha256 cryptographic hash function.
