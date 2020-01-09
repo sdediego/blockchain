@@ -34,6 +34,24 @@ class BlockSchema(BaseModel):
         anystr_strip_whitespace = True
         validate_all = True
 
+    @validator('index', 'nonce', 'difficulty')
+    def valid_positive_integer(cls, value: int, field: Field):
+        """
+        Validate positive integer value.
+
+        :param int value: provided integer value.
+        :param Field field: field name to validate its value.
+        :return int: validated integer value.
+        :raise ValueError: if integer value is non-positive integer (or zero).
+        """
+        try:
+            assert value > 0 if field.alias == 'difficulty' else value >= 0
+        except AssertionError:
+            message = f'Invalid {field.alias}: {value}.'
+            logger.error(f'[BlockSchema] Validation error. {message}')
+            raise ValueError(message)
+        return value
+
     @validator('timestamp')
     def valid_timestamp(cls, value: int):
         """
@@ -47,23 +65,6 @@ class BlockSchema(BaseModel):
             assert math.floor(math.log(value, 10) + 1) == BLOCK_TIMESTAMP_LENGTH
         except AssertionError:
             message = f'Invalid timestamp: {value}.'
-            logger.error(f'[BlockSchema] Validation error. {message}')
-            raise ValueError(message)
-        return value
-
-    @validator('difficulty')
-    def valid_difficulty(cls, value: int):
-        """
-        Validate difficulty value.
-
-        :param int value: provided difficulty value.
-        :return int: validated difficulty value.
-        :raise ValueError: if difficulty value is non-positive integer.
-        """
-        try:
-            assert value > 0
-        except AssertionError:
-            message = f'Invalid difficulty: {value}.'
             logger.error(f'[BlockSchema] Validation error. {message}')
             raise ValueError(message)
         return value
@@ -84,6 +85,8 @@ class BlockSchema(BaseModel):
         Validate hashes values.
 
         :param str value: provided last_hash or hash values.
+        :param dict values: previous fields already validated.
+        :param Field field: field name to validate its value.
         :return str: validated last_hash or hash value.
         :raise ValueError: if last_hash or hash values do not meet required conditions.
         """

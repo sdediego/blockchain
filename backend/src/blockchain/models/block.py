@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+import json
+import re
 from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
@@ -59,15 +61,24 @@ class Block(object):
             f'last_hash: {self.last_hash}, '
             f'hash: {self.hash})')
 
-    def __eq__(self, other: Block):
+    def __eq__(self, block):
         """
         Compare two Block instances to check wether if both are the same
         block or not based on their unique hashes.
 
-        :param Block other: block instance.
+        :param Block block: other block instance.
         :return bool: true/false on block comparison.
         """
-        return self.hash == other.hash
+        return self.hash == block.hash
+
+    @property
+    def info(self):
+        """
+        Get block attributes in dict format.
+
+        :return dict: dictionary of key-value block attributes.
+        """
+        return self.__dict__
 
     def serialize(self):
         """
@@ -77,14 +88,14 @@ class Block(object):
         :return str: block instance attributes in string format.
         """
         try:
-            return json.dumps(self.__dict__)
+            return json.dumps(self.info)
         except (OverflowError, TypeError) as err:
             message = f'Could not encode block data. {err.args[0]}.'
             logger.error(f'[Block] Serialization error. {message}')
             raise BlockError(message)
 
     @classmethod
-    def deserialize(cls, block: str):
+    def deserialize(cls, block_info: str):
         """
         Create a new block instance from the provided stringified block.
 
@@ -92,12 +103,12 @@ class Block(object):
         :return Block: block instance created from provided attributes.
         """
         try:
-            args = json.loads(block)
+            args = json.loads(block_info)
         except (OverflowError, TypeError) as err:
             message = f'Could not decode provided block json data. {err.args[0]}.'
             logger.error(f'[Block] Deserialization error. {message}')
             raise BlockError(message)
-        return cls.create(**args)
+        return cls(**args)
 
     @classmethod
     def create(cls, index: int, timestamp: int, nonce: int,
@@ -115,28 +126,30 @@ class Block(object):
         :param str hash: block data unique hash to prevent fraud.
         :return Block: new class instance.
         """
-        cls._is_valid_schema(index, timestamp, nonce, difficulty, data, last_hash, hash)
-        return cls(index, timestamp, nonce, difficulty, data, last_hash, hash)
+        block_info = {
+            'index': index,
+            'timestamp': timestamp,
+            'nonce': nonce,
+            'difficulty': difficulty,
+            'data': data,
+            'last_hash': last_hash,
+            'hash': hash
+        }
+        cls._is_valid_schema(block_info)
+        return cls(**block_info)
 
     @staticmethod
-    def _is_valid_schema(index: int, timestamp: int, nonce: int,
-                         difficulty: int, data: list, last_hash: str, hash: str):
+    def _is_valid_schema(block_info: dict):
         """
         Perform block attributes validations and check block data integrity.
 
-        :param int index: block number in the blockchain.
-        :param int timestamp: block creation UTC epoch datetime in milliseconds.
-        :param int nonce: arbitrary number for cryptographic security.
-        :param int difficulty: block mining difficulty according to mining rate.
-        :param list data: transactions between the peers in the network.
-        :param str last_hash: previous block hash to link the blockchain.
-        :param str hash: block data unique hash to prevent fraud.
+        :param dict block_info: block attributes.
         :raise BlockError: on attributes validation error.
         """
         try:
-            BlockSchema(index, timestamp, nonce, difficulty, data, last_hash, hash)
+            BlockSchema(**block_info)
         except ValidationError as err:
-            message = err.json()
+            message = re.sub('\s+',' ', err.json())
             logger.error(f'[Block] Validation error. {message}')
             raise BlockError(message)
 
@@ -150,7 +163,7 @@ class Block(object):
         return cls(**GENESIS_BLOCK)
 
     @classmethod
-    def mine_block(cls, last_block: Block, data: list):
+    def mine_block(cls, last_block, data: list):
         """
         Create a new block instance to add to the blockchain.
 
@@ -169,7 +182,7 @@ class Block(object):
         return cls.create(**block)
 
     @classmethod
-    def _proof_of_work(cls, last_block: Block, block: dict):
+    def _proof_of_work(cls, last_block, block: dict):
         """
         Consensus protocol requiring certain computational effort to mine
         a new block to be able to add it to the blockchain. The solution
@@ -190,7 +203,7 @@ class Block(object):
         return block
 
     @staticmethod
-    def _adjust_difficulty(last_block: Block, timestamp: int):
+    def _adjust_difficulty(last_block, timestamp: int):
         """
         Adjust new block mining difficulty to maintain stable mining rate.
 
@@ -203,7 +216,7 @@ class Block(object):
         return last_block.difficulty - 1 if last_block.difficulty > 1 else 1
 
     @classmethod
-    def is_valid(cls, last_block: Block, block: Block):
+    def is_valid(cls, last_block, block):
         """
         Perform checks to candidate block before adding it to the blockchain
         to prevent fraudulent insertions into the blockchain. Block attributes
@@ -213,12 +226,16 @@ class Block(object):
         :param Block block: candidate block to add to the blockchain.
         :raise BlockError: on invalid block attributes.
         """
-        cls._is_valid_schema(**block.__dict__)
+        cls._is_valid_schema(block.info)
         message = None
         if block.last_hash != last_block.hash:
-            message = f'Block last_hash {block.last_hash} and last_block hash {last_block.hash} must match.'
+            message = (f'Block {last_block.index} hash "{last_block.hash}" and '
+                       f'block {block.index} last_hash "{block.last_hash}" must match.')
         if abs(last_block.difficulty - block.difficulty) > 1:
-            message = f'Difficulty must increase as much by 1 between blocks.'
+            message = f'{message} ' if message else ''
+            message = (f'{message}Difficulty must differ as much by 1 between blocks: '
+                       f'block {last_block.index} difficulty: {last_block.difficulty}, '
+                       f'block {block.index} difficulty: {block.difficulty}.')
         if message:
             logger.error(f'[Block] Validation error. {message}')
             raise BlockError(message)

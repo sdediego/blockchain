@@ -1,16 +1,18 @@
 # encoding: utf-8
 
+from src.blockchain.models.utils import hash_block
+
 # Block settings
 BLOCK_HASH_LENGTH = 64
-BLOCK_MINING_RATE = 30 * 1000  # milliseconds (30 secs)
+BLOCK_MINING_RATE = 10 * 1000  # milliseconds (10 secs)
 BLOCK_TIMESTAMP_LENGTH = 13    # milliseconds
 
 GENESIS_BLOCK = {
-    'index': 1,
+    'index': 0,
     'timestamp': 1,
     'nonce': 0,
     'difficulty': 1,
     'data': [],
-    'last_hash': 'genesis_last_hash',
-    'hash': 'genesis_hash'
+    'last_hash': 'genesis_last_hash'
 }
+GENESIS_BLOCK['hash'] = hash_block(*GENESIS_BLOCK.values())
