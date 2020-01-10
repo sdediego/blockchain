@@ -1,17 +1,15 @@
 # encoding: utf-8
 
 import json
-import random
-from unittest import TestCase
 from unittest.mock import patch
 
 from pydantic import ValidationError
 
-from src.blockchain.models.block import Block
 from src.blockchain.schemas.block import BlockSchema
+from tests.blockchain.utilities import BlockMixin
 
 
-class BlockSchemaTest(TestCase):
+class BlockSchemaTest(BlockMixin):
 
     def setUp(self):
         super(BlockSchemaTest, self).setUp()
@@ -35,15 +33,6 @@ class BlockSchemaTest(TestCase):
             'last_hash': 'la57_ha5h',
             'hash': 'ha5h'
         }
-
-    def _get_genesis_block(self):
-        return Block.genesis()
-
-    @patch.object(Block, '_is_valid_schema')
-    def _generate_block(self, block: Block, mock_is_valid_schema):
-        mock_is_valid_schema.return_value = True
-        testing_data = list(f'test_data_{random.randint(0, 100)}')
-        return Block.mine_block(block, testing_data)
 
     def _generate_valid_block(self):
         genesis_block = self._get_genesis_block()

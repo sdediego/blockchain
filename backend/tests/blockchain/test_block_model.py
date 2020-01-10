@@ -1,15 +1,14 @@
 # encoding: utf-8
 
-import random
-from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from src.blockchain.models.block import Block
 from src.blockchain.models.utils import get_utcnow_timestamp
 from src.exceptions import BlockError
+from tests.blockchain.utilities import BlockMixin
 
 
-class BlockTest(TestCase):
+class BlockTest(BlockMixin):
 
     def setUp(self):
         super(BlockTest, self).setUp()
@@ -17,15 +16,6 @@ class BlockTest(TestCase):
         self.first_block = self._generate_block(self.genesis_block)
         self.second_block = self._generate_block(self.first_block)
         self.block_info = self.second_block.info
-
-    def _get_genesis_block(self):
-        return Block.genesis()
-
-    @patch.object(Block, '_is_valid_schema')
-    def _generate_block(self, block: Block, mock_is_valid_schema):
-        mock_is_valid_schema.return_value = True
-        testing_data = [random.randint(0, 100) for _ in range(10)]
-        return Block.mine_block(block, testing_data)
     
     def test_block_string_representation(self):
         self.assertTrue(all([attr in str(self.first_block) for attr in self.block_info.keys()]))
