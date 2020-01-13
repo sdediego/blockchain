@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-
 class BaseError(Exception):
     """
     Handle generic exception.
@@ -24,5 +23,12 @@ class BaseError(Exception):
 class BlockError(BaseError):
     """
     Handle exception for Block instances.
+    """
+    pass
+
+
+class BlockchainError(BaseError):
+    """
+    Handle exception for Blockchain instances.
     """
     pass
