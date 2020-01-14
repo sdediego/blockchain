@@ -103,12 +103,12 @@ class Block(object):
         :return Block: block instance created from provided attributes.
         """
         try:
-            args = json.loads(block_info)
+            block_info = json.loads(block_info)
         except (OverflowError, TypeError) as err:
             message = f'Could not decode provided block json data. {err.args[0]}.'
             logger.error(f'[Block] Deserialization error. {message}')
             raise BlockError(message)
-        return cls(**args)
+        return cls(**block_info)
 
     @classmethod
     def create(cls, index: int, timestamp: int, nonce: int,
