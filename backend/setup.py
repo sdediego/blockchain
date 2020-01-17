@@ -45,8 +45,10 @@ setup(
     packages=find_packages(),
     package_data={'': ['*.txt', '*.cfg']},
     install_requires=[
+        'fastapi',
         'pydantic',
-        'tox'
+        'tox',
+        'uvicorn'
     ],
     python_requires='>=3.7',
     test_suite='tests',
