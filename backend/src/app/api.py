@@ -26,6 +26,14 @@ async def root():
 
 @app.get('/blockchain')
 async def blockchain():
-    logger.info(f'[API] GET blockchain.')
-    response = app.blockchain.serialize()
-    return {'blockchain': response}
+    logger.info('[API] GET blockchain.')
+    return {'blockchain': app.blockchain}
+
+@app.get('/mine')
+async def mine_block():
+    data = ['test data']
+    logger.info('[API] GET mine. Mining new block.')
+    app.blockchain.add_block(data)
+    new_block = app.blockchain.last_block
+    logger.info(f'[API] GET mine. New block mined: {new_block}')
+    return {'new_block': new_block}
