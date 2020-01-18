@@ -47,6 +47,7 @@ setup(
     install_requires=[
         'fastapi',
         'pydantic',
+        'requests',
         'tox',
         'uvicorn'
     ],
