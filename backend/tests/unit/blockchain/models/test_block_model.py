@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 from src.blockchain.models.block import Block
 from src.blockchain.models.utils import get_utcnow_timestamp
 from src.exceptions import BlockError
-from tests.blockchain.utilities import BlockMixin
+from tests.unit.blockchain.utilities import BlockMixin
 
 
 class BlockTest(BlockMixin):

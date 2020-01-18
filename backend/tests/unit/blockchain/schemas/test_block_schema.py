@@ -6,7 +6,7 @@ from unittest.mock import patch
 from pydantic import ValidationError
 
 from src.blockchain.schemas.block import BlockSchema
-from tests.blockchain.utilities import BlockMixin
+from tests.unit.blockchain.utilities import BlockMixin
 
 
 class BlockSchemaTest(BlockMixin):

@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 from src.blockchain.models.block import Block
 from src.blockchain.models.blockchain import Blockchain
 from src.exceptions import BlockchainError
-from tests.blockchain.utilities import BlockchainMixin
+from tests.unit.blockchain.utilities import BlockchainMixin
 
 
 class BlockchainTest(BlockchainMixin):
