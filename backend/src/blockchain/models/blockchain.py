@@ -21,13 +21,13 @@ class Blockchain(object):
     Distributed inmutable ledger of blocks.
     """
     
-    def __init__(self, chain: list):
+    def __init__(self, chain: list = None):
         """
         Create a new Blockchain instance.
 
         :param list chain: chain of blocks.
         """
-        self.chain = chain
+        self.chain = chain or [Block.genesis()]
     
     def __str__(self):
         """
@@ -114,12 +114,28 @@ class Blockchain(object):
         """
         Mine new block and add it to the local blockchain. If new block
         is mined the candidate blockchain will be send over the network
-        to be validated for the rest of the peers.
+        to be validated for the rest of the nodes.
 
         :param data list: transactions data to be added to the next block.
         """
         block = Block.mine_block(self.last_block, data)
         self.chain.append(block)
+
+    def set_valid_chain(self, chain: list):
+        """
+        Set locally the valid chain among the network nodes.
+        The valid chain is the longest one between all the properly formatted chains.
+
+        :param chain list: candidate chain to become the valid one.
+        """
+        try:
+            assert len(chain) > self.length
+        except AssertionError:
+            message = f'Incoming chain is not longer than local chain'
+            logger.error(f'[Blockchain] Replace error. {message}')
+        else:
+            self.is_valid(chain)
+            self.chain = chain
     
     @classmethod
     def is_valid(cls, chain: list):

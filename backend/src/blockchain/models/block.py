@@ -20,7 +20,7 @@ logger = getLogger(__name__)
 
 class Block(object):
     """
-    Storage unit of transactions between the peers of the network.
+    Storage unit of transactions between the nodes of the network.
     The blocks are linked sequencially creating an inmutable distributed
     ledger called blockchain.
     """
@@ -34,7 +34,7 @@ class Block(object):
         :param int timestamp: block creation UTC epoch datetime in milliseconds.
         :param int nonce: arbitrary number for cryptographic security.
         :param int difficulty: block mining difficulty according to mining rate.
-        :param list data: transactions between the peers in the network.
+        :param list data: transactions between the nodes in the network.
         :param str last_hash: previous block hash to link the blockchain.
         :param str hash: block data unique hash to prevent fraud.
         """
@@ -121,7 +121,7 @@ class Block(object):
         :param int timestamp: block creation UTC epoch datetime in milliseconds.
         :param int nonce: arbitrary number for cryptographic security.
         :param int difficulty: block mining difficulty according to mining rate.
-        :param list data: transactions between the peers in the network.
+        :param list data: transactions between the nodes in the network.
         :param str last_hash: previous block hash to link the blockchain.
         :param str hash: block data unique hash to prevent fraud.
         :return Block: new class instance.
@@ -168,7 +168,7 @@ class Block(object):
         Create a new block instance to add to the blockchain.
 
         :param Block last_block: current last block of the blockchain.
-        :param list data: transactions between the peers in the network.
+        :param list data: transactions between the nodes in the network.
         :return Block: new block instance.
         """
         block = {}
