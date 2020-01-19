@@ -84,6 +84,48 @@ class BlockchainTest(BlockchainMixin):
         self.assertEqual(self.blockchain.length, self.chain_length + 1)
         self.assertFalse(self.blockchain.last_block == last_block)
 
+    @patch.object(Blockchain, 'is_valid')
+    def test_set_valid_chain_shorter_chain(self, mock_is_valid):
+        mock_is_valid.return_value = True
+        initial_length = self.blockchain.length
+        short_chain = self.valid_chain.copy()
+        short_chain.pop()
+        self.blockchain.set_valid_chain(short_chain)
+        self.assertFalse(mock_is_valid.called)
+        self.assertTrue(len(short_chain) < self.blockchain.length)
+        self.assertEqual(self.blockchain.length, initial_length)
+
+    @patch.object(Blockchain, 'is_valid')
+    def test_set_valid_chain_longer_chain(self, mock_is_valid):
+        mock_is_valid.return_value = True
+        longer_chain = self.valid_chain.copy()
+        self.blockchain.chain.pop()
+        initial_length = self.blockchain.length
+        self.blockchain.set_valid_chain(longer_chain)
+        self.assertTrue(mock_is_valid.called)
+        self.assertTrue(initial_length < len(longer_chain))
+        self.assertTrue(initial_length < self.blockchain.length)
+        self.assertEqual(self.blockchain.length, len(longer_chain))
+
+    def test_set_valid_chain_replace_chain(self):
+        longer_chain = self.valid_chain.copy()
+        self.blockchain.chain.pop()
+        initial_length = self.blockchain.length
+        self.blockchain.set_valid_chain(longer_chain)
+        self.assertTrue(initial_length < len(longer_chain))
+        self.assertTrue(initial_length < self.blockchain.length)
+        self.assertEqual(self.blockchain.length, len(longer_chain))
+
+    def test_set_valid_chain_unvalid(self):
+        initial_length = self.blockchain.length
+        err_message = '[Blockchain] Validation error.'
+        with self.assertRaises(BlockchainError) as err:
+            self.blockchain.set_valid_chain(self.invalid_chain)
+            self.assertTrue(len(self.invalid_chain) > self.blockchain.length)
+            self.assertTrue(self.blockchain.length, initial_length)
+            self.assertIsInstance(err, BlockchainError)
+            self.assertIn(err_message, err.message)
+
     def test_blockchain_is_valid_schema_valid(self):
         Blockchain.is_valid(self.valid_chain)
 

@@ -131,7 +131,7 @@ class Blockchain(object):
         try:
             assert len(chain) > self.length
         except AssertionError:
-            message = f'Incoming chain is not longer than local chain'
+            message = 'Incoming chain is not longer than local chain'
             logger.error(f'[Blockchain] Replace error. {message}')
         else:
             self.is_valid(chain)
