@@ -32,3 +32,10 @@ class BlockchainError(BaseError):
     Handle exception for Blockchain instances.
     """
     pass
+
+
+class P2PServerError(BaseError):
+    """
+    Handle exception for P2PServer instances.
+    """
+    pass
