@@ -49,7 +49,8 @@ setup(
         'pydantic',
         'requests',
         'tox',
-        'uvicorn'
+        'uvicorn',
+        'websockets'
     ],
     python_requires='>=3.7',
     test_suite='tests',
