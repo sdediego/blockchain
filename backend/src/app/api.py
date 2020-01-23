@@ -6,7 +6,7 @@ from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
 
-from src.blockchain.models.block import Block
+from src.app.p2p_server import P2PServer
 from src.blockchain.models.blockchain import Blockchain
 
 # Custom logger for api module
@@ -16,8 +16,8 @@ logger = getLogger(__name__)
 
 app = FastAPI(__name__)
 
-chain = [Block.genesis()]
-app.blockchain = Blockchain(chain)
+app.blockchain = Blockchain()
+app.p2p_server = P2PServer(app.blockchain)
 
 @app.get('/')
 async def root():
