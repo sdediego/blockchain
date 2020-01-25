@@ -2,12 +2,12 @@
 # encoding: utf-8
 
 import argparse
-import uvicorn
-
 import asyncio
 from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
+
+import uvicorn
 
 from src.app.api import app
 
@@ -23,12 +23,17 @@ async def start_api_server(host: str, port: int):
     return await server.serve()
 
 
-async def start_p2p_server(host: str, port: int, nodes: str):
-    nodes = nodes.split(',') if nodes else []
+async def start_p2p_server(host: str, port: int):
     app.p2p_server.bind(host, port)
-    await app.p2p_server.set_nodes(nodes) 
-    logger.info(f'[app] Blockchain P2P Websocket server running on port {port}')
+    logger.info(f'[app] Blockchain P2P server running on port {port}')
     return await app.p2p_server.start()
+
+
+async def start_p2p_heartbeat(nodes: str):
+    nodes = [node.strip() for node in nodes.split(',')] if nodes else []
+    await app.p2p_server.connect_nodes(nodes)
+    logger.info(f'[app] Blockchain P2P heartbeat up.')
+    return await app.p2p_server.heartbeat()
 
 
 if __name__ == '__main__':
@@ -43,5 +48,6 @@ if __name__ == '__main__':
     process = asyncio.get_event_loop()
     servers = asyncio.gather(
         start_api_server(host=args.api_host, port=args.api_port),
-        start_p2p_server(host=args.p2p_host, port=args.p2p_port, nodes=args.nodes))
+        start_p2p_server(host=args.p2p_host, port=args.p2p_port),
+        start_p2p_heartbeat(nodes=args.nodes))
     process.run_until_complete(servers)

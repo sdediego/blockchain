@@ -1,10 +1,10 @@
 # encoding: utf-8
 
-from fastapi import FastAPI
-
 from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
+
+from fastapi import FastAPI
 
 from src.app.p2p_server import P2PServer
 from src.blockchain.models.blockchain import Blockchain

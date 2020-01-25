@@ -1,15 +1,8 @@
 # encoding: utf-8
 
-from websockets.client import WebSocketClientProtocol as Socket
-
-from logging import getLogger
-from logging.config import fileConfig
-from os.path import dirname, join
 from typing import Union
 
-# Custom logger for nodes module
-fileConfig(join(dirname(dirname(__file__)), 'config', 'logging.cfg'))
-logger = getLogger(__name__)
+from websockets.client import WebSocketClientProtocol as Socket
 
 
 class AsyncSet(set):
@@ -29,13 +22,11 @@ class AsyncSet(set):
             item = self.array[self.index]
         except IndexError:
             self.index = 0
-            message = f'{self.name.capitalize()} processed: {self.size}.'
-            logger.info(f'[NodesNetwork] Processing finished. {message}')
             raise StopAsyncIteration
         self.index += 1
         return item
 
-    def __contains__(self, item):
+    def __contains__(self, item: Union[str, Socket]):
         return item in self.sequence
 
     @property
@@ -49,10 +40,11 @@ class AsyncSet(set):
     def add(self, items: Union[str, Socket, list]):
         items = items if isinstance(items, list) else [items]
         for item in items:
-            item = item.strip() if isinstance(item, str) else item
             self.sequence.add(item)
-        logger.info(f'[NodesNetwork] {self.name.capitalize()} added: {len(items)}.')
-        logger.info(f'[NodesNetwork] Total {self.name.capitalize()}: {self.size}.')
+
+    def clear(self):
+        self.sequence.clear()
+        self.index = 0
 
 
 class NodesNetwork(object):
@@ -60,3 +52,7 @@ class NodesNetwork(object):
     def __init__(self):
         self.uris = AsyncSet('uris')
         self.sockets = AsyncSet('sockets')
+
+    @property
+    def coherent(self):
+        return self.uris.size == self.sockets.size

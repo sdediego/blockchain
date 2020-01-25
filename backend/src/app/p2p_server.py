@@ -1,8 +1,5 @@
 # encoding: utf-8
 
-import websockets
-from websockets.client import WebSocketClientProtocol as Socket
-
 import asyncio
 import json
 from functools import wraps
@@ -10,6 +7,10 @@ from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
 from typing import Union
+
+import websockets
+from websockets.client import WebSocketClientProtocol as Socket
+from websockets.exceptions import WebSocketException
 
 from src.app.nodes import NodesNetwork
 from src.blockchain.models.blockchain import Blockchain
@@ -25,6 +26,7 @@ class P2PServer(object):
     def __init__(self, blockchain: Blockchain):
         self.host = None
         self.port = None
+        self.server = None
         self.blockchain = blockchain
         self.nodes = NodesNetwork()
 
@@ -32,26 +34,24 @@ class P2PServer(object):
     def uri(self):
         return f'ws://{self.host}:{self.port}'
 
-    def bind(self,  host:str, port: int):
-        self._set_address(host, port)
+    def bind(self,  host: str, port: int):
+        self._set_local_address(host, port)
 
-    async def set_nodes(self, uris: Union[str, list]):
+    async def start(self, host: str = None, port: int = None):
+        if not self.host or not self.port: self.bind(host, port)
+        self.server = await websockets.serve(self._listen, self.host, self.port)
+        return self.server
+
+    def close(self):
+        self.server.close()
+
+    async def connect_nodes(self, uris: Union[str, list]):
         self._add_uris(uris)
         await self._connect()
 
-    async def start(self, host: str = None, port: int = None):
-        self._set_address(host, port) if not self.host or not self.port else None
-        return await websockets.serve(self._listen, self.host, self.port)
-
     async def _listen(self, socket: Socket, path: str):
-        logger.info(f'[P2PServer] Socket received: {socket.remote_address}.')
+        logger.info(f'[P2PServer] Socket received: {self._get_remote_address(socket)}.')
         await self._message_handler(socket)
-
-    def _add_uris(self, uris: Union[str, list]):
-        self.nodes.uris.add(uris)
-
-    def _set_address(self, host: str, port: int):
-        self.host, self.port = host, port
 
     async def _connect(self):
         async for uri in self.nodes.uris:
@@ -59,12 +59,29 @@ class P2PServer(object):
                 self._add_socket(socket)
                 await self._notify(socket)
 
+    def _add_uris(self, uris: Union[str, list]):
+        if isinstance(uris, str) and uris == self.uri: return
+        if isinstance(uris, list) and self.uri in uris: uris.remove(self.uri)
+        self.nodes.uris.add(uris)
+
     def _add_socket(self, socket: Socket):
         self.nodes.sockets.add(socket)
+
+    def _clear_sockets(self):
+        self.nodes.sockets.clear()
+
+    def _set_local_address(self, host: str, port: int):
+        self.host, self.port = host, port
+
+    def _get_remote_address(self, socket: Socket):
+        return socket.remote_address
 
     async def _notify(self, socket: Socket):
         message = {'event': 'notification', 'content': self.uri}
         await self._send(socket, message)
+
+    async def _send(self, socket: Socket, message: dict):
+        await socket.send(self._stringify(message))
 
     async def _message_handler(self, socket: Socket):
         async for message in socket:
@@ -73,12 +90,13 @@ class P2PServer(object):
             if event == 'notification':
                 uri = data.get('content')
                 self._add_uris(uri)
-                logger.info(f'[P2PServer] Node listed. {uri}')
+                logger.info(f'[P2PServer] Node listed. {uri}.')
+            elif event == 'synchronization':
+                uris = data.get('content')
+                self._add_uris(uris)
+                logger.info(f'[P2PServer] Uris added. {uris}. Total: {self.nodes.uris.array}')
             else:
                 pass
-
-    async def _send(self, socket: Socket, message: dict):
-        await socket.send(self._stringify(message))
 
     def _stringify(self, message: dict):
         try:
@@ -95,3 +113,25 @@ class P2PServer(object):
             message = f'Could not decode message data. {err.args[0]}.'
             logger.error(f'[P2PServer] Parse error. {message}')
             raise P2PServerError(message)
+
+    async def heartbeat(self):
+        async def _heartbeat():
+            while True:
+                await self._synchronize()
+                await asyncio.sleep(10)
+        return await _heartbeat()
+
+    async def _synchronize(self):
+        message = {'event': 'synchronization', 'content': self.nodes.uris.array}
+        self._clear_sockets()
+        async for uri in self.nodes.uris:
+            try:
+                async with websockets.connect(uri) as socket:
+                    self._add_socket(socket)
+                    await self._send(socket, message)
+            except (ConnectionError, WebSocketException):
+                error_msg = f'Not connected to uri: {uri}'
+                logger.error(f'[P2PServer] Connection error. {error_msg}.')
+        if not self.nodes.coherent:
+            warning_msg = f'Uris: {self.nodes.uris.size}, Sockets: {self.nodes.sockets.size}.'
+            logger.warning(f'[P2PServer] Nodes incoherence. {warning_msg}')
