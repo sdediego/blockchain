@@ -76,8 +76,21 @@ class P2PServer(object):
     def _get_remote_address(self, socket: Socket):
         return socket.remote_address
 
+    async def broadcast(self):
+        logger.info(f'[P2PServer] Broadcasting to network nodes.')
+        async for uri in self.nodes.uris:
+            async with websockets.connect(uri) as socket:
+                await self._send_chain(socket)
+        message = f'Network nodes broadcasted: {self.nodes.uris.size}.'
+        logger.info(f'[P2PServer] Broadcast finished. {message}')
+
     async def _notify(self, socket: Socket):
         message = {'event': 'notification', 'content': self.uri}
+        await self._send(socket, message)
+
+    async def _send_chain(self, socket: Socket):
+        logger.info(f'[P2PServer] Sending chain to {self._get_remote_address(socket)}.')
+        message = {'event': 'blockchain', 'content': self.blockchain.serialize()}
         await self._send(socket, message)
 
     async def _send(self, socket: Socket, message: dict):
@@ -90,11 +103,18 @@ class P2PServer(object):
             if event == 'notification':
                 uri = data.get('content')
                 self._add_uris(uri)
-                logger.info(f'[P2PServer] Node listed. {uri}.')
+                info_msg = f'Uri listed. {uri}.'
+                logger.info(f'[P2PServer] Notification received. {info_msg}')
             elif event == 'synchronization':
                 uris = data.get('content')
                 self._add_uris(uris)
-                logger.info(f'[P2PServer] Uris added. {uris}. Total: {self.nodes.uris.array}')
+                info_msg = f'Total uris: {self.nodes.uris.array}.'
+                logger.info(f'[P2PServer] Synchronization finished. {info_msg}')
+            elif event == 'blockchain':
+                chain = data.get('content')
+                blockchain = Blockchain.deserialize(chain)
+                logger.info(f'[Blockchain] Blockchain recieved. {chain}.')
+                self.blockchain.set_valid_chain(blockchain.chain)
             else:
                 pass
 

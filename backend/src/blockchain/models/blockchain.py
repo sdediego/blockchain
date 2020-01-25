@@ -136,7 +136,9 @@ class Blockchain(object):
         else:
             self.is_valid(chain)
             self.chain = chain
-    
+            message = f'Blockchain length: {self.length}. Last block: {self.last_block}.'
+            logger.info(f'[Blockchain] Replace successfull. {message}')
+
     @classmethod
     def is_valid(cls, chain: list):
         """

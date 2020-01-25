@@ -36,4 +36,5 @@ async def mine_block():
     app.blockchain.add_block(data)
     new_block = app.blockchain.last_block
     logger.info(f'[API] GET mine. New block mined: {new_block}')
+    await app.p2p_server.broadcast()
     return {'new_block': new_block}
