@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-from functools import wraps
 from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
@@ -14,6 +13,7 @@ from websockets.exceptions import WebSocketException
 
 from src.app.nodes import NodesNetwork
 from src.blockchain.models.blockchain import Blockchain
+from src.config.settings import CHANNELS, HEARTBEAT_RATE
 from src.exceptions import P2PServerError
 
 # Custom logger for p2p_server module
@@ -47,17 +47,18 @@ class P2PServer(object):
 
     async def connect_nodes(self, uris: Union[str, list]):
         self._add_uris(uris)
-        await self._connect()
+        await self._connect_sockets(self._send_node, True)
+
+    async def heartbeat(self):
+        async def _heartbeat():
+            while True:
+                await self._synchronize()
+                await asyncio.sleep(HEARTBEAT_RATE)
+        return await _heartbeat()
 
     async def _listen(self, socket: Socket, path: str):
         logger.info(f'[P2PServer] Socket received: {self._get_remote_address(socket)}.')
         await self._message_handler(socket)
-
-    async def _connect(self):
-        async for uri in self.nodes.uris:
-            async with websockets.connect(uri) as socket:
-                self._add_socket(socket)
-                await self._notify(socket)
 
     def _add_uris(self, uris: Union[str, list]):
         if isinstance(uris, str) and uris == self.uri: return
@@ -78,19 +79,37 @@ class P2PServer(object):
 
     async def broadcast(self):
         logger.info(f'[P2PServer] Broadcasting to network nodes.')
-        async for uri in self.nodes.uris:
-            async with websockets.connect(uri) as socket:
-                await self._send_chain(socket)
+        await self._connect_sockets(self._send_chain, False)
         message = f'Network nodes broadcasted: {self.nodes.uris.size}.'
         logger.info(f'[P2PServer] Broadcast finished. {message}')
 
-    async def _notify(self, socket: Socket):
-        message = {'event': 'notification', 'content': self.uri}
+    async def _connect_sockets(self, callback, register: bool, *args):
+         async for uri in self.nodes.uris:
+             await self._connect_socket(callback, uri, register, *args)
+
+    async def _connect_socket(self, callback, uri: str, register: bool = False, *args):
+        try:
+            async with websockets.connect(uri) as socket:
+                if register: self._add_socket(socket)
+                await callback(socket, *args)
+        except (ConnectionError, WebSocketException):
+            warning_msg = f'Not connected to uri: {uri}'
+            logger.warning(f'[P2PServer] Connection error. {warning_msg}.')
+
+    async def _synchronize(self):
+        message = {'channel': CHANNELS.get('sync'), 'content': self.nodes.uris.array}
+        self._clear_sockets()
+        await self._connect_sockets(self._send, True, message)
+        if not self.nodes.coherent:
+            warning_msg = f'Uris: {self.nodes.uris.size}, Sockets: {self.nodes.sockets.size}.'
+            logger.warning(f'[P2PServer] Nodes incoherence. {warning_msg}')
+
+    async def _send_node(self, socket: Socket):
+        message = {'channel': CHANNELS.get('node'), 'content': self.uri}
         await self._send(socket, message)
 
     async def _send_chain(self, socket: Socket):
-        logger.info(f'[P2PServer] Sending chain to {self._get_remote_address(socket)}.')
-        message = {'event': 'blockchain', 'content': self.blockchain.serialize()}
+        message = {'channel': CHANNELS.get('chain'), 'content': self.blockchain.serialize()}
         await self._send(socket, message)
 
     async def _send(self, socket: Socket, message: dict):
@@ -99,24 +118,26 @@ class P2PServer(object):
     async def _message_handler(self, socket: Socket):
         async for message in socket:
             data = self._parse(message)
-            event = data.get('event')
-            if event == 'notification':
+            channel = data.get('channel')
+            if channel == CHANNELS.get('node'):
                 uri = data.get('content')
-                self._add_uris(uri)
                 info_msg = f'Uri listed. {uri}.'
-                logger.info(f'[P2PServer] Notification received. {info_msg}')
-            elif event == 'synchronization':
+                logger.info(f'[P2PServer] Node received. {info_msg}')
+                self._add_uris(uri)
+                await self._connect_socket(self._send_chain, uri)
+            elif channel == CHANNELS.get('sync'):
                 uris = data.get('content')
                 self._add_uris(uris)
                 info_msg = f'Total uris: {self.nodes.uris.array}.'
                 logger.info(f'[P2PServer] Synchronization finished. {info_msg}')
-            elif event == 'blockchain':
+            elif channel == CHANNELS.get('chain'):
                 chain = data.get('content')
+                logger.info(f'[P2PServer] Chain received. {chain}.')
                 blockchain = Blockchain.deserialize(chain)
-                logger.info(f'[Blockchain] Blockchain recieved. {chain}.')
                 self.blockchain.set_valid_chain(blockchain.chain)
             else:
-                pass
+                error_msg = f'Unknown channel received: {channel}.'
+                logger.error(f'[P2PServer] Channel error. {error_msg}')
 
     def _stringify(self, message: dict):
         try:
@@ -133,25 +154,3 @@ class P2PServer(object):
             message = f'Could not decode message data. {err.args[0]}.'
             logger.error(f'[P2PServer] Parse error. {message}')
             raise P2PServerError(message)
-
-    async def heartbeat(self):
-        async def _heartbeat():
-            while True:
-                await self._synchronize()
-                await asyncio.sleep(10)
-        return await _heartbeat()
-
-    async def _synchronize(self):
-        message = {'event': 'synchronization', 'content': self.nodes.uris.array}
-        self._clear_sockets()
-        async for uri in self.nodes.uris:
-            try:
-                async with websockets.connect(uri) as socket:
-                    self._add_socket(socket)
-                    await self._send(socket, message)
-            except (ConnectionError, WebSocketException):
-                error_msg = f'Not connected to uri: {uri}'
-                logger.error(f'[P2PServer] Connection error. {error_msg}.')
-        if not self.nodes.coherent:
-            warning_msg = f'Uris: {self.nodes.uris.size}, Sockets: {self.nodes.sockets.size}.'
-            logger.warning(f'[P2PServer] Nodes incoherence. {warning_msg}')
