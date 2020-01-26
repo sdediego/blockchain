@@ -5,21 +5,14 @@ import random
 from aiounittest import async_test
 
 from src.app.nodes import NodesNetwork
-from tests.unit.logging import LoggingMixin
+from tests.unit.app.utilities import NodesNetworkMixin
 
 
-class NodesNetworkTest(LoggingMixin):
+class NodesNetworkTest(NodesNetworkMixin):
 
     def setUp(self):
         self.nodes = NodesNetwork()
         self.uris = self._generate_uris(10)
-
-    def _generate_uris(self, number: int):
-        ports = set([self._get_random_port() for _ in range(number)])
-        return [f'ws://127.0.0.1:{port}' for port in ports]
-
-    def _get_random_port(self):
-        return random.randint(4000, 5000)
 
     def test_nodes_has_uris(self):
         self.assertTrue(hasattr(self.nodes, 'uris'))

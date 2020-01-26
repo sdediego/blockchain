@@ -46,6 +46,7 @@ setup(
     package_data={'': ['*.txt', '*.cfg']},
     install_requires=[
         'aiounittest',
+        'asynctest',
         'fastapi',
         'pydantic',
         'requests',
