@@ -45,6 +45,7 @@ setup(
     packages=find_packages(),
     package_data={'': ['*.txt', '*.cfg']},
     install_requires=[
+        'aiounittest',
         'fastapi',
         'pydantic',
         'requests',
