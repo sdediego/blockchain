@@ -1,6 +1,7 @@
 # encoding: utf-8
 
-from unittest import TestCase
+import asyncio
+from unittest.mock import patch
 
 from starlette.testclient import TestClient
 
@@ -27,8 +28,12 @@ class ApiTest(LoggingMixin):
         chain = response.json().get('blockchain').get('chain')
         self.assertEqual(len(chain), app.blockchain.length)
 
-    def test_api_get_mine_block_route(self):
-        response = self.client.get("/mine") 
+    @patch('src.app.api.app.p2p_server.broadcast')
+    def test_api_get_mine_block_route(self, mock_broadcast):
+        mock_broadcast.return_value = asyncio.Future()
+        mock_broadcast.return_value.set_result(None)
+        response = self.client.get("/mine")
+        self.assertTrue(mock_broadcast.called)
         self.assertEqual(response.status_code, 200)
         self.assertIn('new_block', response.json())
         block_info = response.json().get('new_block')
