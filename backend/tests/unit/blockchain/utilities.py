@@ -1,13 +1,13 @@
 # encoding: utf-8
 
 import random
-from unittest import TestCase
 from unittest.mock import patch
 
 from src.blockchain.models.block import Block
+from tests.unit.logging import LoggingMixin
 
 
-class BlockMixin(TestCase):
+class BlockMixin(LoggingMixin):
 
     def _get_genesis_block(self):
         return Block.genesis()

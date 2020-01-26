@@ -2,15 +2,15 @@
 
 import random
 import string
-from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from src.blockchain.models import utils
 from src.config.settings import BLOCK_TIMESTAMP_LENGTH
 from src.exceptions import BlockError
+from tests.unit.logging import LoggingMixin
 
 
-class BlockUtilsTest(TestCase):
+class BlockUtilsTest(LoggingMixin):
     
     def setUp(self):
         super(BlockUtilsTest, self).setUp()

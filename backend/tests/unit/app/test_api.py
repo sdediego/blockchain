@@ -6,9 +6,10 @@ from starlette.testclient import TestClient
 
 from src.app.api import app
 from src.blockchain.models.block import Block
+from tests.unit.logging import LoggingMixin
 
 
-class ApiTest(TestCase):
+class ApiTest(LoggingMixin):
 
     def setUp(self):
         self.client = TestClient(app)
