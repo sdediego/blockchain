@@ -12,6 +12,7 @@ from websockets.client import WebSocketClientProtocol as Socket
 from websockets.exceptions import WebSocketException
 
 from src.app.nodes import NodesNetwork
+from src.app.utils import parse, stringify
 from src.blockchain.models.blockchain import Blockchain
 from src.config.settings import CHANNELS, HEARTBEAT_RATE
 from src.exceptions import P2PServerError
@@ -83,6 +84,14 @@ class P2PServer(object):
         message = f'Network nodes broadcasted: {self.nodes.uris.size}.'
         logger.info(f'[P2PServer] Broadcast finished. {message}')
 
+    async def _synchronize(self):
+        message = {'channel': CHANNELS.get('sync'), 'content': self.nodes.uris.array}
+        self._clear_sockets()
+        await self._connect_sockets(self._send, True, message)
+        if not self.nodes.coherent:
+            warning_msg = f'Uris: {self.nodes.uris.size}, Sockets: {self.nodes.sockets.size}.'
+            logger.warning(f'[P2PServer] Nodes incoherence. {warning_msg}')
+
     async def _connect_sockets(self, callback, register: bool, *args):
          async for uri in self.nodes.uris:
              await self._connect_socket(callback, uri, register, *args)
@@ -96,14 +105,6 @@ class P2PServer(object):
             warning_msg = f'Not connected to uri: {uri}'
             logger.warning(f'[P2PServer] Connection error. {warning_msg}.')
 
-    async def _synchronize(self):
-        message = {'channel': CHANNELS.get('sync'), 'content': self.nodes.uris.array}
-        self._clear_sockets()
-        await self._connect_sockets(self._send, True, message)
-        if not self.nodes.coherent:
-            warning_msg = f'Uris: {self.nodes.uris.size}, Sockets: {self.nodes.sockets.size}.'
-            logger.warning(f'[P2PServer] Nodes incoherence. {warning_msg}')
-
     async def _send_node(self, socket: Socket):
         message = {'channel': CHANNELS.get('node'), 'content': self.uri}
         await self._send(socket, message)
@@ -113,11 +114,11 @@ class P2PServer(object):
         await self._send(socket, message)
 
     async def _send(self, socket: Socket, message: dict):
-        await socket.send(self._stringify(message))
+        await socket.send(stringify(message))
 
     async def _message_handler(self, socket: Socket):
         async for message in socket:
-            data = self._parse(message)
+            data = parse(message)
             channel = data.get('channel')
             if channel == CHANNELS.get('node'):
                 uri = data.get('content')
@@ -138,19 +139,3 @@ class P2PServer(object):
             else:
                 error_msg = f'Unknown channel received: {channel}.'
                 logger.error(f'[P2PServer] Channel error. {error_msg}')
-
-    def _stringify(self, message: dict):
-        try:
-            return json.dumps(message)
-        except (OverflowError, TypeError) as err:
-            message = f'Could not encode message. {err.args[0]}.'
-            logger.error(f'[P2PServer] Stringify error. {message}')
-            raise P2PServerError(message)
-
-    def _parse(self, message: str):
-        try:
-            return json.loads(message)
-        except (OverflowError, TypeError) as err:
-            message = f'Could not decode message data. {err.args[0]}.'
-            logger.error(f'[P2PServer] Parse error. {message}')
-            raise P2PServerError(message)
