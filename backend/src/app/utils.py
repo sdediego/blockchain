@@ -13,6 +13,13 @@ logger = getLogger(__name__)
 
 
 def stringify(message: dict):
+    """
+    Stringify the message to be able to send the data over
+    the network to the rest of the peer nodes.
+
+    :param dict message: message with data to transfer.
+    :return str: message data in string format.
+    """
     try:
         return json.dumps(message)
     except (OverflowError, TypeError) as err:
@@ -22,6 +29,12 @@ def stringify(message: dict):
 
 
 def parse(message: str):
+    """
+    Recover the original data from the provided stringified message.
+
+    :param str message: stringified message.
+    :return dict: parsed message with data.
+    """
     try:
         return json.loads(message)
     except (OverflowError, TypeError) as err:

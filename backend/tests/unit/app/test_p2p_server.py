@@ -22,6 +22,11 @@ class P2PServerTest(NodesNetworkMixin):
         self.p2p_server = P2PServer(self.blockchain)
         self.p2p_server.bind(self.host, self.port)
 
+    def test_p2p_server_string_representation(self):
+        self.assertTrue(f'host: {self.host}' in str(self.p2p_server))
+        self.assertTrue(f'port: {self.port}' in str(self.p2p_server))
+        self.assertTrue(f'server uri: {self.p2p_server.uri}' in str(self.p2p_server))
+
     def test_p2p_server_uri(self):
         uri = f'ws://{self.p2p_server.host}:{self.p2p_server.port}'
         self.assertEqual(self.p2p_server.uri, uri)
