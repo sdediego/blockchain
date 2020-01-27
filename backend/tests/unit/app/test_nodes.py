@@ -3,6 +3,7 @@
 import random
 
 from aiounittest import async_test
+from websockets.client import WebSocketClientProtocol as Socket
 
 from src.app.nodes import NodesNetwork
 from tests.unit.app.utilities import NodesNetworkMixin
@@ -13,6 +14,13 @@ class NodesNetworkTest(NodesNetworkMixin):
     def setUp(self):
         self.nodes = NodesNetwork()
         self.uris = self._generate_uris(10)
+        self.sockets = [Socket() for _ in range(random.randint(1, 10))]
+
+    def test_nodes_string_representation(self):
+        self.nodes.uris.add(self.uris)
+        self.nodes.sockets.add(self.sockets)
+        self.assertTrue(all([uri in str(self.nodes) for uri in self.uris]))
+        self.assertTrue(all([str(socket) in str(self.nodes) for socket in self.sockets]))
 
     def test_nodes_has_uris(self):
         self.assertTrue(hasattr(self.nodes, 'uris'))
