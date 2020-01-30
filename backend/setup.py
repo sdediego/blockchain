@@ -47,6 +47,7 @@ setup(
     install_requires=[
         'aiounittest',
         'asynctest',
+        'cryptography',
         'fastapi',
         'pydantic',
         'requests',
