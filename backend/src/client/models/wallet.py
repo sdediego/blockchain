@@ -7,6 +7,7 @@ from os.path import dirname, join
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.backends.openssl.ec import _EllipticCurvePrivateKey
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import (encode_dss_signature,
@@ -37,14 +38,14 @@ class Wallet(object):
 
     @staticmethod
     def generate_address():
-        return str(uuid.uuid4()).replace('-', '')
+        return uuid.uuid4().hex
 
     @staticmethod
     def generate_private_key():
         return ec.generate_private_key(ec.SECP256K1(), default_backend())
 
     @staticmethod
-    def generate_public_key(private_key: str):
+    def generate_public_key(private_key: _EllipticCurvePrivateKey):
         public_key = private_key.public_key()
         encoded_key = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
@@ -52,16 +53,15 @@ class Wallet(object):
         return encoded_key.decode('utf-8')
 
     @staticmethod
-    def verify(public_key: str, signature: str, data):
+    def verify(public_key: str, signature: tuple, data):
         encoded_key = public_key.encode('utf-8')
         encoded_sign = encode_dss_signature(*signature)
         encoded_data = serialize(data).encode('utf-8')
         deserialized_key = serialization.load_pem_public_key(encoded_key, default_backend())
         try:
             deserialized_key.verify(encoded_sign, encoded_data, ec.ECDSA(hashes.SHA256()))
-        except InvalidSignature as err:
-            message = f'Invalid signature. {err.args[0]}.'
-            logger.warning(f'[Wallet] Verification error. {message}')
+        except InvalidSignature:
+            logger.warning('[Wallet] Verification error. Invalid signature.')
             return False
         return True
 
