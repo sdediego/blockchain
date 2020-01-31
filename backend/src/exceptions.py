@@ -39,3 +39,10 @@ class P2PServerError(BaseError):
     Handle exception for P2PServer instances.
     """
     pass
+
+
+class WalletError(BaseError):
+    """
+    Handle exception for Wallet instances.
+    """
+    pass
