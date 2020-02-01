@@ -46,3 +46,10 @@ class WalletError(BaseError):
     Handle exception for Wallet instances.
     """
     pass
+
+
+class TransactionError(BaseError):
+    """
+    Handle exception for Transaction instances.
+    """
+    pass
