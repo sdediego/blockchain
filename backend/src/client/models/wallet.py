@@ -22,8 +22,18 @@ logger = getLogger(__name__)
 
 
 class Wallet(object):
+    """
+    Storage for cryptocurrency earned by mining blocks or
+    received transacations. Keeps track of the balance and
+    allowes to make transactions.
+    """
 
     def __init__(self, blockchain: Blockchain = None):
+        """
+        Create a new wallet instance.
+
+        :param Blockchain blockchain: local copy of the blockchain.
+        """
         self.balance = 0
         self.blockchain = blockchain
         self.address = Wallet.generate_address()
@@ -31,6 +41,11 @@ class Wallet(object):
         self.public_key = Wallet.generate_public_key(self.private_key)
 
     def __str__(self):
+        """"
+        Represent class instance via params string.
+
+        :return str: instance representation.
+        """
         return ('Wallet('
             f'balance: {self.balance}, '
             f'address: {self.address}, '
@@ -38,14 +53,30 @@ class Wallet(object):
 
     @staticmethod
     def generate_address():
+        """
+        Create a wallet address.
+
+        :return str: string address of 32 hexadecimal digits.
+        """
         return uuid.uuid4().hex
 
     @staticmethod
     def generate_private_key():
+        """
+        Create private key to sign data.
+        """
         return ec.generate_private_key(ec.SECP256K1(), default_backend())
 
     @staticmethod
     def generate_public_key(private_key: _EllipticCurvePrivateKey):
+        """
+        Create public key from the private key.
+        Public key is used to challenge ownership of cryptocurrency
+        and can be shared with the rest of the network.
+
+        :param _EllipticCurvePrivateKey private_key: wallet private key.
+        :return str: public key derived from private key.
+        """
         public_key = private_key.public_key()
         encoded_key = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
@@ -54,6 +85,14 @@ class Wallet(object):
 
     @staticmethod
     def verify(public_key: str, signature: tuple, data):
+        """
+        Verify a signature based on the original public key and data.
+
+        :param str public_key: wallet public key.
+        :param tuple signature: data signature candidate.
+        :param data: signed data to verify its signature.
+        :return bool: wether if signature is valid or not.
+        """
         encoded_key = public_key.encode('utf-8')
         encoded_sign = encode_dss_signature(*signature)
         encoded_data = serialize(data).encode('utf-8')
@@ -66,6 +105,14 @@ class Wallet(object):
         return True
 
     def sign(self, data):
+        """
+        Generate a signature for the data using wallet private key.
+        The data signature is a two number tuple representing two coordinates
+        of an elliptic curve.
+
+        :param data: data to be signed.
+        :return tuple: data signature.
+        """
         encoded_data = serialize(data).encode('utf-8')
         signature = self.private_key.sign(encoded_data, ec.ECDSA(hashes.SHA256()))
         return decode_dss_signature(signature)
