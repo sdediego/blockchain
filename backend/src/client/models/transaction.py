@@ -149,3 +149,22 @@ class Transaction(object):
             message = re.sub('\s+',' ', err.json())
             logger.error(f'[Transaction] Validation error. {message}')
             raise TransactionError(message)
+
+    def update(self, sender: Wallet, recipient: str, amount: float):
+        """
+        Update existing transaction for a sender with an existing or
+        a new recipient address.
+
+        :param Wallet sender: cryptocurrency sender wallet.
+        :param str recipient: cryptocurrency recipient address.
+        :param float amount: amount of cryptocurrency to exchange.
+        :raise TransactionError: on attributes validation error.
+        """
+        address = sender.address
+        if amount > self.output[address]:
+            message = f'Amount {amount} exceeds sender available balance {self.output[address]}.'
+            logger.error(f'[Transaction] Invalid amount. {message}')
+            raise TransactionError(message)
+        self.output[recipient] = self.output[recipient] + amount if recipient in self.output else amount
+        self.output[address] = self.output[address] - amount
+        self.input = Wallet.create_input(sender, self.output)
