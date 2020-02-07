@@ -26,6 +26,7 @@ class TransactionSchema(BaseModel):
     class Config:
         title = 'Transaction schema'
         anystr_strip_whitespace = True
+        arbitrary_types_allowed = True
         validate_all = True
 
     @validator('sender')
@@ -37,7 +38,7 @@ class TransactionSchema(BaseModel):
         :raise ValueError: if wallet balance value is non-positive.
         """
         try:
-            assert value.balance > 0
+            assert value.balance > 0 if hasattr(value, 'balance') else False
         except AssertionError:
             message = f'Amount must be greater than zero to make transaction.'
             logger.error(f'[TransactionSchema] Validation error. {message}')
@@ -70,9 +71,9 @@ class TransactionSchema(BaseModel):
         :return float: validated amount value.
         :raise ValueError: if exchange amount is less than sender balance.
         """
-        sender = values.get('sender')
+        sender = values.get('sender', Wallet())
         try:
-            assert value > sender.balance
+            assert sender.balance > value
         except AssertionError:
             message = f'Amount {value} exceeds wallet balance {sender.balance}.'
             logger.error(f'[TransactionSchema] Validation error. {message}')
