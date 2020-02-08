@@ -5,7 +5,7 @@ from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, root_validator, validator
 from pydantic.fields import Field
 
 from src.client.models.wallet import Wallet
@@ -19,15 +19,87 @@ class TransactionSchema(BaseModel):
     """
     Schema for definition and validation of transaction attributes.
     """
-    sender: Wallet
-    recipient: str
-    amount: float
+    uuid: int = None
+    output: dict = None
+    input: dict = None
+    sender: Wallet = None
+    recipient: str = None
+    amount: float = None
 
     class Config:
         title = 'Transaction schema'
         anystr_strip_whitespace = True
         arbitrary_types_allowed = True
-        validate_all = True
+
+    @root_validator(pre=True)
+    def check_raw_input_data(cls, values: dict):
+        """
+        Check input raw data is s complete set of valid values.
+
+        :param dict values: provided input raw values.
+        :return dict: checked input raw values.
+        :raise ValueError: if provided values set is incomplete.
+        """
+        if all([key in values.keys() for key in ('uuid', 'output', 'input')]):
+            return values
+        if all([key in values.keys() for key in ('sender', 'recipient', 'amount')]):
+            return values
+        message = f'Invalid set of transaction attributes: {values.keys()}.'
+        logger.error(f'[TransactionSchema] Validation error. {message}')
+        raise ValueError(message)
+
+    @validator('uuid')
+    def valid_uuid(cls, value: int):
+        """
+        Validate transaction unique identifier is correct integer.
+
+        :param int value: provided unique identifier value.
+        :return int: validated unique identifier value.
+        :raise ValueError: if identifier is badly formed integer.
+        """
+        try:
+            uuid.UUID(int=value)
+        except ValueError as err:
+            message = f'Invalid unique identifier integer value: {err.args[0]}.'
+            logger.error(f'[TransactionSchema] Validation error. {message}')
+            raise ValueError(message)
+        return value
+
+    @validator('output')
+    def valid_output(cls, value: dict):
+        """
+        Validate transaction output attributes are correct.
+
+        :param dict value: provided transaction output value.
+        :return dict: validated transaction output value.
+        :raise ValueError: if output attributes are invalid.
+        """
+        try:
+            assert all([uuid.UUID(hex=key) for key in value.keys()])
+            assert all([isinstance(amount, float) for amount in value.values()])
+        except AssertionError:
+            message = f'Invalid output: {value}.'
+            logger.error(f'[TransactionSchema] Validation error. {message}')
+            raise ValueError(message)
+        return value
+
+    @validator('input')
+    def valid_input(cls, value: dict):
+        """
+        Validate transaction input attributes are correct.
+
+        :param dict value: provided transaction input value.
+        :return dict: validated transaction input value.
+        :raise ValueError: if input attributes are invalid.
+        """
+        keys = ('timestamp', 'amount', 'address', 'public_key', 'signature')
+        try:
+            assert all([key in value.keys() for key in keys])
+        except AssertionError:
+            message = f'Invalid input: {value.keys()}.'
+            logger.error(f'[TransactionSchema] Validation error. {message}')
+            raise ValueError(message)
+        return value
 
     @validator('sender')
     def valid_sender_wallet(cls, value: Wallet):
@@ -35,6 +107,7 @@ class TransactionSchema(BaseModel):
         Validate sender wallet balance is positive.
 
         :param Wallet value: provided sender wallet instance.
+        :return Wallet: validated sender wallet instance.
         :raise ValueError: if wallet balance value is non-positive.
         """
         try:
@@ -51,10 +124,11 @@ class TransactionSchema(BaseModel):
         Validate recipient address is correct hexadecimal string.
 
         :param str value: provided recipient address value.
+        :return str: validated recipient address value.
         :raise ValueError: if address is badly formed hexadecimal string.
         """
         try:
-            uuid.UUID(value)
+            uuid.UUID(hex=value)
         except ValueError as err:
             message = f'Invalid recipient address value: {err.args[0]}.'
             logger.error(f'[TransactionSchema] Validation error. {message}')

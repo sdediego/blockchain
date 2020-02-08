@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import json
 import re
 import uuid
 from logging import getLogger
@@ -24,17 +25,21 @@ class Transaction(object):
     sender wallet address and one or more recipients.
     """
     
-    def __init__(self, sender: Wallet, recipient: str, amount: float):
+    def __init__(self, uuid: int = None, output: dict = None, input: dict = None,
+                 sender: Wallet = None, recipient: str = None, amount: float = None):
         """
         Create a new transaction instance.
 
+        :param int uuid: unique identifier integer.
+        :param dict output: transaction output information.
+        :param dict input: transaction input information.
         :param Wallet sender: cryptocurrency sender wallet.
         :param str recipient: cryptocurrency recipient address.
         :param float amount: amount of cryptocurrency to exchange.
         """
-        self.uuid = uuid.uuid4().int
-        self.output = Transaction.create_output(sender, recipient, amount)
-        self.input = Transaction.create_input(sender, self.output)
+        self.uuid = uuid or Transaction.generate_uuid()
+        self.output = output or Transaction.generate_output(sender, recipient, amount)
+        self.input = input or Transaction.generate_input(sender, self.output)
 
     def __str__(self):
         """
@@ -47,17 +52,17 @@ class Transaction(object):
             f'input: {self.input}, '
             f'output: {self.output})')
 
-    @property
-    def info(self):
+    @staticmethod
+    def generate_uuid():
         """
-        Get transaction attributes in dict format.
+        Create a transaction unique identifier.
 
-        :return dict: dictionary of key-value transaction attributes.
+        :return int: unique identifier as a 128-bit integer.
         """
-        return self.__dict__
+        return uuid.uuid4().int
 
     @staticmethod
-    def create_output(sender: Wallet, recipient: str, amount: float):
+    def generate_output(sender: Wallet, recipient: str, amount: float):
         """
         Create output data structure for the transaction.
 
@@ -72,7 +77,7 @@ class Transaction(object):
         return output
 
     @staticmethod
-    def create_input(sender: Wallet, output: dict):
+    def generate_input(sender: Wallet, output: dict):
         """
         Create input data structure for the transaction.
 
@@ -87,6 +92,15 @@ class Transaction(object):
         input['public_key'] = sender.public_key
         input['signature'] = sender.sign(output)
         return input
+
+    @property
+    def info(self):
+        """
+        Get transaction attributes in dict format.
+
+        :return dict: dictionary of key-value transaction attributes.
+        """
+        return self.__dict__
 
     def serialize(self):
         """
@@ -120,31 +134,41 @@ class Transaction(object):
         return cls(**transaction_info)
 
     @classmethod
-    def create(cls, sender: Wallet, recipient: str, amount: float):
+    def create(cls, uuid: int = None, output: dict = None, input: dict = None,
+               sender: Wallet = None, recipient: str = None, amount: float = None):
         """
         Initialize a new class instance after performing attributes validations
         and checking block data integrity.
 
+        :param int uuid: unique identifier integer.
+        :param dict output: transaction output information.
+        :param dict input: transaction input information.
         :param Wallet sender: cryptocurrency sender wallet.
         :param str recipient: cryptocurrency recipient address.
         :param float amount: amount of cryptocurrency to exchange.
         :return Transaction: new transaction instance.
         """
-        cls.is_valid_schema(sender, recipient, amount)
-        return cls(sender, recipient, amount)
+        transaction_info = {
+            'uuid': uuid,
+            'output': output,
+            'input': input,
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount
+        }
+        cls.is_valid_schema(transaction_info)
+        return cls(**transaction_info)
 
     @staticmethod
-    def is_valid_schema(sender: Wallet, recipient: str, amount: float):
+    def is_valid_schema(transaction_info: dict):
         """
         Perform transaction attributes validations.
 
-        :param Wallet sender: cryptocurrency sender wallet.
-        :param str recipient: cryptocurrency recipient address.
-        :param float amount: amount of cryptocurrency to exchange.
+        :param dict transaction_info: transaction attributes.
         :raise TransactionError: on attributes validation error.
         """
         try:
-            TransactionSchema(sender=sender, recipient=recipient, amount=amount)
+            TransactionSchema(**transaction_info)
         except ValidationError as err:
             message = re.sub('\s+',' ', err.json())
             logger.error(f'[Transaction] Validation error. {message}')
