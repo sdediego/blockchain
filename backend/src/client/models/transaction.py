@@ -39,7 +39,7 @@ class Transaction(object):
         """
         self.uuid = uuid or self.generate_uuid()
         self.output = output or self.generate_output(sender, recipient, amount)
-        self.input = input or self.generate_input(sender, self.output)
+        self.input = input or self.generate_input(sender)
 
     def __str__(self):
         """
@@ -76,8 +76,7 @@ class Transaction(object):
         output[sender.address] = sender.balance - amount
         return output
 
-    @staticmethod
-    def generate_input(sender: Wallet, output: dict):
+    def generate_input(self, sender: Wallet):
         """
         Create input data structure for the transaction.
 
@@ -90,7 +89,7 @@ class Transaction(object):
         input['amount'] = sender.balance
         input['address'] = sender.address
         input['public_key'] = sender.public_key
-        input['signature'] = sender.sign(output)
+        input['signature'] = sender.sign(self.output)
         return input
 
     @property
@@ -174,6 +173,27 @@ class Transaction(object):
             logger.error(f'[Transaction] Validation error. {message}')
             raise TransactionError(message)
 
+    @staticmethod
+    def is_valid_transaction(transaction: 'Transaction'):
+        """
+        Perform transaction validation.
+
+        :param Transaction transaction: transaction instance to verify.
+        :raise TransactionError: on transaction validation error.
+        """
+        amount = sum(transaction.output.values())
+        if not transaction.input.get('amount') == amount:
+            message = f'Invalid transaction amount: {amount}.'
+            logger.error(f'[Transaction] Validation error. {message}')
+            raise TransactionError(message)
+        public_key = transaction.input.get('public_key')
+        signature = transaction.input.get('signature')
+        output = transaction.output
+        if not Wallet.verify(public_key, signature, output):
+            message = 'Invalid signature verification.'
+            logger.error(f'[Transaction] Validation error. {message}')
+            raise TransactionError(message)
+
     def update(self, sender: Wallet, recipient: str, amount: float):
         """
         Update existing transaction for a sender with an existing or
@@ -185,10 +205,10 @@ class Transaction(object):
         :raise TransactionError: on attributes validation error.
         """
         address = sender.address
-        if amount > self.output[address]:
-            message = f'Amount {amount} exceeds sender available balance {self.output[address]}.'
+        if amount > self.output.get(address):
+            message = f'Amount {amount} exceeds sender available balance {self.output.get(address)}.'
             logger.error(f'[Transaction] Invalid amount. {message}')
             raise TransactionError(message)
-        self.output[recipient] = self.output[recipient] + amount if recipient in self.output else amount
-        self.output[address] = self.output[address] - amount
-        self.input = self.generate_input(sender, self.output)
+        self.output[recipient] = self.output.get(recipient) + amount if recipient in self.output else amount
+        self.output[address] = self.output.get(address) - amount
+        self.input = self.generate_input(sender)
