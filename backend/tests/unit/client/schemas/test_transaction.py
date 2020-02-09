@@ -9,21 +9,15 @@ from pydantic import ValidationError
 from src.client.models.utils import get_utcnow_timestamp
 from src.client.models.wallet import Wallet
 from src.client.schemas.transaction import TransactionSchema
-from tests.unit.logging import LoggingMixin
+from tests.unit.client.utilities import ClientMixin
 
 
-class TransactionSchemaTest(LoggingMixin):
+class TransactionSchemaTest(ClientMixin):
 
     def setUp(self):
-        self.wallet = Wallet()
-        self.wallet.balance = self._generate_float()
-        self.recipient = self._generate_address()
-        self.amount = self._generate_float(ceil=self.wallet.balance)
+        super(TransactionSchemaTest, self).setUp()
         self.output = self._generate_output()
         self.input = self._generate_input()
-    
-    def _generate_float(self, floor: float = 0, ceil: float = 100):
-        return random.uniform(floor, ceil)
 
     def _generate_address(self):
         return Wallet.generate_address()

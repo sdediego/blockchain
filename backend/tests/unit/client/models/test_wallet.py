@@ -2,9 +2,8 @@
 
 import re
 import uuid
-from unittest import TestCase
 
-from cryptography.hazmat.backends.openssl import ec
+from cryptography.hazmat.backends.openssl.ec import _EllipticCurvePrivateKey
 
 from src.client.models.wallet import Wallet
 from tests.unit.logging import LoggingMixin
@@ -27,7 +26,7 @@ class WalletTest(LoggingMixin):
 
     def test_wallet_generate_private_key(self):
         private_key = Wallet.generate_private_key()
-        self.assertIsInstance(private_key, ec._EllipticCurvePrivateKey)
+        self.assertIsInstance(private_key, _EllipticCurvePrivateKey)
 
     def test_wallet_generate_public_key(self):
         public_key = Wallet.generate_public_key(self.wallet.private_key)

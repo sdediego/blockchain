@@ -37,9 +37,9 @@ class Transaction(object):
         :param str recipient: cryptocurrency recipient address.
         :param float amount: amount of cryptocurrency to exchange.
         """
-        self.uuid = uuid or Transaction.generate_uuid()
-        self.output = output or Transaction.generate_output(sender, recipient, amount)
-        self.input = input or Transaction.generate_input(sender, self.output)
+        self.uuid = uuid or self.generate_uuid()
+        self.output = output or self.generate_output(sender, recipient, amount)
+        self.input = input or self.generate_input(sender, self.output)
 
     def __str__(self):
         """
@@ -191,4 +191,4 @@ class Transaction(object):
             raise TransactionError(message)
         self.output[recipient] = self.output[recipient] + amount if recipient in self.output else amount
         self.output[address] = self.output[address] - amount
-        self.input = Wallet.create_input(sender, self.output)
+        self.input = self.generate_input(sender, self.output)

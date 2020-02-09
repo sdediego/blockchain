@@ -36,9 +36,9 @@ class Wallet(object):
         """
         self.balance = 0
         self.blockchain = blockchain
-        self.address = Wallet.generate_address()
-        self.private_key = Wallet.generate_private_key()
-        self.public_key = Wallet.generate_public_key(self.private_key)
+        self.address = self.generate_address()
+        self.private_key = self.generate_private_key()
+        self.public_key = self.generate_public_key(self.private_key)
 
     def __str__(self):
         """"
@@ -84,7 +84,7 @@ class Wallet(object):
         return encoded_key.decode('utf-8')
 
     @staticmethod
-    def verify(public_key: str, signature: tuple, data):
+    def verify(public_key: str, signature: tuple, data: dict):
         """
         Verify a signature based on the original public key and data.
 
@@ -104,7 +104,7 @@ class Wallet(object):
             return False
         return True
 
-    def sign(self, data):
+    def sign(self, data: dict):
         """
         Generate a signature for the data using wallet private key.
         The data signature is a two number tuple representing two coordinates
