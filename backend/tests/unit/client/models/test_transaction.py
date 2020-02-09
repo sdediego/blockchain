@@ -35,7 +35,7 @@ class TransactionTest(ClientMixin):
     def test_transaction_generate_input(self):
         wallet = Wallet()
         keys = ('timestamp', 'amount', 'address', 'public_key', 'signature')
-        input = Transaction.generate_input(wallet, self.transaction.output)
+        input = self.transaction.generate_input(wallet)
         self.assertIsInstance(input, dict)
         self.assertTrue(all([key in keys for key in input.keys()]))
 
@@ -64,7 +64,7 @@ class TransactionTest(ClientMixin):
 
     @patch.object(Transaction, 'is_valid_schema')
     def test_transaction_create_invalid_schema(self, mock_is_valid_schema):
-        err_message = 'Validation error.'
+        err_message = 'Validation error'
         mock_is_valid_schema.side_effect = Mock(side_effect=TransactionError(err_message))
         with self.assertRaises(TransactionError) as err:
             Transaction.create(**self.transaction_info)
@@ -80,7 +80,34 @@ class TransactionTest(ClientMixin):
         with self.assertRaises(TransactionError) as err:
             Transaction.is_valid_schema(self.transaction_info)
             self.assertIsInstance(err, TransactionError)
-            self.assertIn('Validation error.', err.message)
+            self.assertIn('Validation error', err.message)
+
+    @patch.object(Transaction, 'is_valid_schema')
+    def test_transaction_is_valid_transaction(self, mock_is_valid_schema):
+        mock_is_valid_schema.return_value = True
+        Transaction.is_valid_transaction(self.transaction)
+        self.assertTrue(mock_is_valid_schema.called)
+
+    @patch.object(Transaction, 'is_valid_schema')
+    def test_transaction_is_valid_transaction_invalid_output(self, mock_is_valid_schema):
+        mock_is_valid_schema.return_value = True
+        self.transaction.output[self.wallet.address] = self._generate_float()
+        with self.assertRaises(TransactionError) as err:
+            Transaction.is_valid_transaction(self.transaction)
+            self.assertTrue(mock_is_valid_schema.called)
+            self.assertIsInstance(err, TransactionError)
+            self.assertIn('Invalid transaction amount', err.message)
+
+    @patch.object(Transaction, 'is_valid_schema')
+    def test_transaction_is_valid_transaction_invalid_signature(self, mock_is_valid_schema):
+        mock_is_valid_schema.return_value = True
+        self.transaction.output[self.wallet.address] = self._generate_float()
+        self.transaction.input['signature'] = self.wallet.sign(self.transaction.output)
+        with self.assertRaises(TransactionError) as err:
+            Transaction.is_valid_transaction(self.transaction)
+            self.assertTrue(mock_is_valid_schema.called)
+            self.assertIsInstance(err, TransactionError)
+            self.assertIn('Invalid signature verification', err.message)
 
     def test_transaction_update(self):
         recipient = 'recipient'
@@ -95,7 +122,7 @@ class TransactionTest(ClientMixin):
 
     def test_transaction_update_invalid_amount(self):
         amount = self.wallet.balance
-        err_message = 'Invalid amount.'
+        err_message = 'Invalid amount'
         with self.assertRaises(TransactionError) as err:
             self.transaction.update(self.wallet, self.recipient, amount)
             self.assertIn(err_message, err.message)

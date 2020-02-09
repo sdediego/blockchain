@@ -176,11 +176,12 @@ class Transaction(object):
     @staticmethod
     def is_valid_transaction(transaction: 'Transaction'):
         """
-        Perform transaction validation.
+        Perform transaction logic validations.
 
         :param Transaction transaction: transaction instance to verify.
         :raise TransactionError: on transaction validation error.
         """
+        Transaction.is_valid_schema(transaction.info)
         amount = sum(transaction.output.values())
         if not transaction.input.get('amount') == amount:
             message = f'Invalid transaction amount: {amount}.'
