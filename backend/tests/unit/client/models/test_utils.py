@@ -12,6 +12,10 @@ class ClientUtilsTest(LoggingMixin):
     def setUp(self):
         self.data = {'test_data_key': 'test_data_value'}
 
+    def test_get_utcnow_timestamp(self):
+        timestamp = utils.get_utcnow_timestamp()
+        self.assertIsInstance(timestamp, int)
+
     def test_utils_serialize(self):
         serialized = utils.serialize(self.data)
         self.assertIsInstance(self.data, dict)
