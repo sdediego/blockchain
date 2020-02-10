@@ -201,7 +201,7 @@ class P2PServer(object):
         :param bool register: wether if register socket connection.
         """
         async for uri in self.nodes.uris:
-             await self._connect_socket(callback, uri, register, *args)
+            await self._connect_socket(callback, uri, register, *args)
 
     async def _connect_socket(self, callback, uri: str, register: bool = False, *args):
         """
