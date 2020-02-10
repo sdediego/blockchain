@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import asyncio
+import random
 from unittest.mock import patch
 
 from starlette.testclient import TestClient
@@ -38,3 +39,13 @@ class ApiTest(LoggingMixin):
         self.assertIn('new_block', response.json())
         block_info = response.json().get('new_block')
         self.assertEqual(Block.create(**block_info), app.blockchain.last_block)
+
+    def test_api_post_transact_route(self):
+        recipient = "recipient"
+        amount = random.uniform(0, 100)
+        response = self.client.post("/transact", json={"recipient": recipient, "amount": amount})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('transaction', response.json())
+        transaction = response.json().get('transaction')
+        self.assertTrue(all([key in transaction for key in ('uuid', 'output', 'input')]))
+        self.assertEqual(transaction.get('output').get(recipient), amount)

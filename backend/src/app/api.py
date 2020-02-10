@@ -38,7 +38,7 @@ async def mine_block():
     logger.info('[API] GET mine. Mining new block.')
     app.blockchain.add_block(data)
     new_block = app.blockchain.last_block
-    logger.info(f'[API] GET mine. New block mined: {new_block}')
+    logger.info(f'[API] GET mine. New block mined: {new_block}.')
     await app.p2p_server.broadcast()
     return {'new_block': new_block}
 
@@ -47,4 +47,5 @@ async def transact(data: dict):
     recipient = data.get('recipient')
     amount = data.get('amount')
     transaction = Transaction(sender=app.wallet, recipient=recipient, amount=amount)
+    logger.info(f'[API] POST transact. New transaction made: {transaction}.')
     return {'transaction': transaction}
