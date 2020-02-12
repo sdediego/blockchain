@@ -4,8 +4,8 @@ from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
 
-from src.blockchain.model.blockchain import Blockchain
-from src.client.model.transaction import Transaction
+from src.blockchain.models.blockchain import Blockchain
+from src.client.models.transaction import Transaction
 
 # Custom logger for transaction pool class module
 fileConfig(join(dirname(dirname(dirname(__file__))), 'config', 'logging.cfg'))
@@ -33,6 +33,15 @@ class TransactionsPool(object):
         """
         return f'Transactions pool: [{", ".join([str(transaction) for transaction in self.pool.values()])}]'
 
+    @property
+    def size(self):
+        """
+        Get the transactions pool size.
+
+        :return int: number of unconfirmed transactions in the pool.
+        """
+        return len(self.pool)
+
     def serialize(self):
         """
         Stringify the transactions in the pool.
@@ -49,7 +58,8 @@ class TransactionsPool(object):
         :param list pool: serialized pool of transactions.
         :return TransactionsPool: transactions pool created from provided stringified pool.
         """
-        pool = list(map(lambda transaction: Transaction.deserialize(transaction), pool))
+        transactions = list(map(lambda transaction: Transaction.deserialize(transaction), pool))
+        pool = {transaction.uuid: transaction for transaction in transactions}
         return cls(pool)
 
     def get_transaction(self, address: str):
@@ -78,7 +88,7 @@ class TransactionsPool(object):
         message = f'New transaction added to the pool: {transaction}.'
         logger.info(f'[TransactionsPool] Add transaction. {message}')
 
-    def clear_transaction_pool(self, blockchain: Blockchain):
+    def clear_pool(self, blockchain: Blockchain):
         """
         Remove added transactions to the blockchain from the pool.
 
