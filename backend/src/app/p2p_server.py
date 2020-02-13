@@ -15,6 +15,8 @@ from websockets.server import WebSocketServer
 from src.app.nodes import NodesNetwork
 from src.app.utils import parse, stringify
 from src.blockchain.models.blockchain import Blockchain
+from src.client.models.transaction import Transaction
+from src.client.models.transactions_pool import TransactionsPool
 from src.config.settings import CHANNELS, HEARTBEAT_RATE
 from src.exceptions import P2PServerError
 
@@ -32,7 +34,7 @@ class P2PServer(object):
     Each network node keeps track of the rest of the network nodes.
     """
 
-    def __init__(self, blockchain: Blockchain):
+    def __init__(self, blockchain: Blockchain, transactions_pool: TransactionsPool):
         """
         Create a new P2PServer instance.
 
@@ -42,6 +44,7 @@ class P2PServer(object):
         self.port = None
         self.server = None
         self.blockchain = blockchain
+        self.transactions_pool = transactions_pool
         self.nodes = NodesNetwork()
 
     def __str__(self):
@@ -168,15 +171,26 @@ class P2PServer(object):
         """
         return socket.remote_address
 
-    async def broadcast(self):
+    async def broadcast_chain(self):
         """
         Broadcast local chain to the rest of the network nodes.
         After a new block is mined and added to the local chain it is broadcasted
         to the rest of the nodes and if valid replaced as the new blockchain instance
         for the entire network.
         """
-        logger.info(f'[P2PServer] Broadcasting to network nodes.')
+        logger.info(f'[P2PServer] Broadcasting chain to network nodes.')
         await self._connect_sockets(self._send_chain, False)
+        message = f'Network nodes broadcasted: {self.nodes.uris.size}.'
+        logger.info(f'[P2PServer] Broadcast finished. {message}')
+
+    async def broadcast_transaction(self, transaction: Transaction):
+        """
+        Broadcast new transaction to the rest of the network nodes.
+        After a new transaction is created it is broadcasted to the rest of the
+        network nodes.
+        """
+        logger.info(f'[P2PServer] Broadcasting transaction to network nodes.')
+        await self._connect_socket(self._send_transaction, False, transaction)
         message = f'Network nodes broadcasted: {self.nodes.uris.size}.'
         logger.info(f'[P2PServer] Broadcast finished. {message}')
 
@@ -237,6 +251,16 @@ class P2PServer(object):
         message = {'channel': CHANNELS.get('chain'), 'content': self.blockchain.serialize()}
         await self._send(socket, message)
 
+    async def _send_transaction(self, socket: Socket, transaction: Transaction):
+        """
+        Send message with new transaction data over a socket connection.
+
+        :param Socket socket: outgoing socket client.
+        :param Transaction transaction: transaction instance to send.
+        """
+        message = {'channel': CHANNELS.get('transaction'), 'content': self.transaction.serialize()}
+        await self._send(socket, message)
+
     async def _send(self, socket: Socket, message: dict):
         """
         Send message with data over a socket connection.
@@ -272,6 +296,11 @@ class P2PServer(object):
                 logger.info(f'[P2PServer] Chain received. {chain}.')
                 blockchain = Blockchain.deserialize(chain)
                 self.blockchain.set_valid_chain(blockchain.chain)
+            elif channel == CHANNELS.get('transaction'):
+                transaction_info = data.get('content')
+                logger.info(f'[P2PServer] Transaction received. {transaction_info}.')
+                transaction = Transaction.deserialize(transaction_info)
+                self.transactions_pool.add_transaction(transaction)
             else:
                 error_msg = f'Unknown channel received: {channel}.'
                 logger.error(f'[P2PServer] Channel error. {error_msg}')

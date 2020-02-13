@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from src.app.p2p_server import P2PServer
 from src.blockchain.models.blockchain import Blockchain
 from src.client.models.transaction import Transaction
+from src.client.models.transactions_pool import TransactionsPool
 from src.client.models.wallet import Wallet
 
 # Custom logger for api module
@@ -20,7 +21,8 @@ app = FastAPI(__name__)
 
 app.blockchain = Blockchain()
 app.wallet = Wallet(app.blockchain)
-app.p2p_server = P2PServer(app.blockchain)
+app.transactions_pool = TransactionsPool()
+app.p2p_server = P2PServer(app.blockchain, app.transactions_pool)
 
 @app.get('/')
 async def root():
@@ -35,17 +37,18 @@ async def blockchain():
 @app.get('/mine')
 async def mine_block():
     data = ['test data']
-    logger.info('[API] GET mine. Mining new block.')
+    logger.info('[API] GET mine. Mining block.')
     app.blockchain.add_block(data)
-    new_block = app.blockchain.last_block
-    logger.info(f'[API] GET mine. New block mined: {new_block}.')
-    await app.p2p_server.broadcast()
-    return {'new_block': new_block}
+    block = app.blockchain.last_block
+    logger.info(f'[API] GET mine. Block mined: {block}.')
+    await app.p2p_server.broadcast_chain()
+    return {'block': block}
 
 @app.post('/transact')
 async def transact(data: dict):
     recipient = data.get('recipient')
     amount = data.get('amount')
-    transaction = Transaction(sender=app.wallet, recipient=recipient, amount=amount)
-    logger.info(f'[API] POST transact. New transaction made: {transaction}.')
+    transaction = Transaction(sender=app.wallet, recipient=recipient, amount=amount)  # create
+    logger.info(f'[API] POST transact. Transaction made: {transaction}.')
+    await app.p2p_server.broadcast_transaction(transaction)
     return {'transaction': transaction}
