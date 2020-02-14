@@ -48,7 +48,12 @@ async def mine_block():
 async def transact(data: dict):
     recipient = data.get('recipient')
     amount = data.get('amount')
-    transaction = Transaction(sender=app.wallet, recipient=recipient, amount=amount)  # create
-    logger.info(f'[API] POST transact. Transaction made: {transaction}.')
+    transaction = app.transactions_pool.get_transaction(app.wallet.address)
+    if transaction:
+        transaction.update(app.wallet, recipient, amount)
+        logger.info(f'[API] POST transact. Transaction updated: {transaction}.')
+    else:
+        transaction = Transaction(sender=app.wallet, recipient=recipient, amount=amount)  # create
+        logger.info(f'[API] POST transact. Transaction made: {transaction}.')
     await app.p2p_server.broadcast_transaction(transaction)
     return {'transaction': transaction}
