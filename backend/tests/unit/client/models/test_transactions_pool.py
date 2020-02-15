@@ -12,7 +12,8 @@ from tests.unit.client.utilities import ClientMixin
 class TransactionsPoolTest(ClientMixin):
 
     def setUp(self):
-        self.transactions_pool = self._generate_transactions_pool()
+        self.pool = self._generate_transactions_pool()
+        self.transactions_pool = TransactionsPool(self.pool)
         self.serialized = self.transactions_pool.serialize()
 
     def _generate_transactions_pool(self):
@@ -20,7 +21,7 @@ class TransactionsPoolTest(ClientMixin):
         for _ in range(random.randint(1, 10)):
             transaction = self._generate_transaction()
             pool.update({transaction.uuid: transaction})
-        return TransactionsPool(pool)
+        return pool
 
     def _generate_transaction(self):
         wallet = Wallet()
@@ -35,6 +36,14 @@ class TransactionsPoolTest(ClientMixin):
         self.assertIn('Transactions pool', transactions_pool_str)
         self.assertIn('Transaction', transactions_pool_str)
         self.assertTrue(all([f'uuid: {uuid}' in transactions_pool_str for uuid in uuids]))
+
+    def test_transactions_pool_size(self):
+        size = len(self.transactions_pool.pool)
+        self.assertEqual(self.transactions_pool.size, size)
+
+    def test_transactions_pool_data(self):
+        data = list(map(lambda transaction: transaction.serialize(), self.pool.values()))
+        self.assertEqual(self.transactions_pool.data, data)
 
     def test_transactions_pool_serialize(self):
         self.assertIsInstance(self.serialized, list)
