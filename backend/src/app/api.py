@@ -36,8 +36,8 @@ async def blockchain():
 
 @app.get('/mine')
 async def mine_block():
-    data = ['test data']
     logger.info('[API] GET mine. Mining block.')
+    data = app.transactions_pool.data
     app.blockchain.add_block(data)
     block = app.blockchain.last_block
     logger.info(f'[API] GET mine. Block mined: {block}.')

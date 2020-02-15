@@ -42,6 +42,15 @@ class TransactionsPool(object):
         """
         return len(self.pool)
 
+    @property
+    def data(self):
+        """
+        Get the serialized transactions data from the transactions pool.
+
+        :return list: serialized transactions data.
+        """
+        return list(map(lambda transaction: transaction.serialize(), self.pool.values()))
+
     def serialize(self):
         """
         Stringify the transactions in the pool.
