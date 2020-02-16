@@ -10,6 +10,9 @@ from websockets.server import WebSocketServer
 
 from src.app.p2p_server import P2PServer
 from src.blockchain.models.blockchain import Blockchain
+from src.client.models.transaction import Transaction
+from src.client.models.transactions_pool import TransactionsPool
+from src.client.models.wallet import Wallet
 from tests.unit.app.utilities import NodesNetworkMixin
 
 
@@ -19,7 +22,8 @@ class P2PServerTest(NodesNetworkMixin):
         self.host = '127.0.0.1'
         self.port = 3000
         self.blockchain = Blockchain()
-        self.p2p_server = P2PServer(self.blockchain)
+        self.transactions_pool = TransactionsPool()
+        self.p2p_server = P2PServer(self.blockchain, self.transactions_pool)
         self.p2p_server.bind(self.host, self.port)
 
     def test_p2p_server_string_representation(self):
@@ -143,11 +147,23 @@ class P2PServerTest(NodesNetworkMixin):
 
     @async_test
     @async_patch.object(Blockchain, 'deserialize')
-    async def test_p2p_server_broadcast(self, mock_deserialize):
-        mock_deserialize.return_value = None
+    async def test_p2p_server_broadcast_chain(self, mock_deserialize):
+        mock_deserialize.return_value = self.blockchain
         nodes = [self.p2p_server.uri]
         self.p2p_server.nodes.uris.add(nodes)
         await self.p2p_server.start()
-        await self.p2p_server.broadcast()
+        await self.p2p_server.broadcast_chain()
         self.assertTrue(mock_deserialize.called)
         self.p2p_server.close()   
+
+    @async_test
+    @async_patch.object(Transaction, 'deserialize')
+    async def test_p2p_server_broadcast_transaction(self, mock_deserialize):
+        transaction = Transaction(sender=Wallet(), recipient='recipient', amount=100)
+        mock_deserialize.return_value = transaction
+        nodes = [self.p2p_server.uri]
+        self.p2p_server.nodes.uris.add(nodes)
+        await self.p2p_server.start()
+        await self.p2p_server.broadcast_transaction(transaction)
+        self.assertTrue(mock_deserialize.called)
+        self.p2p_server.close()

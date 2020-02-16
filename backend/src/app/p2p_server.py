@@ -190,7 +190,7 @@ class P2PServer(object):
         network nodes.
         """
         logger.info(f'[P2PServer] Broadcasting transaction to network nodes.')
-        await self._connect_socket(self._send_transaction, False, transaction)
+        await self._connect_sockets(self._send_transaction, False, transaction)
         message = f'Network nodes broadcasted: {self.nodes.uris.size}.'
         logger.info(f'[P2PServer] Broadcast finished. {message}')
 
@@ -258,7 +258,7 @@ class P2PServer(object):
         :param Socket socket: outgoing socket client.
         :param Transaction transaction: transaction instance to send.
         """
-        message = {'channel': CHANNELS.get('transaction'), 'content': self.transaction.serialize()}
+        message = {'channel': CHANNELS.get('transaction'), 'content': transaction.serialize()}
         await self._send(socket, message)
 
     async def _send(self, socket: Socket, message: dict):
@@ -296,6 +296,7 @@ class P2PServer(object):
                 logger.info(f'[P2PServer] Chain received. {chain}.')
                 blockchain = Blockchain.deserialize(chain)
                 self.blockchain.set_valid_chain(blockchain.chain)
+                self.transactions_pool.clear_pool(self.blockchain)
             elif channel == CHANNELS.get('transaction'):
                 transaction_info = data.get('content')
                 logger.info(f'[P2PServer] Transaction received. {transaction_info}.')

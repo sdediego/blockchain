@@ -30,11 +30,14 @@ class ApiTest(LoggingMixin):
         self.assertEqual(len(chain), app.blockchain.length)
 
     @patch('src.app.api.app.p2p_server.broadcast_chain')
-    def test_api_get_mine_block_route(self, mock_broadcast_chain):
+    @patch('src.app.api.app.transactions_pool.clear_pool')
+    def test_api_get_mine_block_route(self, mock_clear_pool, mock_broadcast_chain):
         mock_broadcast_chain.return_value = asyncio.Future()
         mock_broadcast_chain.return_value.set_result(None)
+        mock_clear_pool.return_value = True
         response = self.client.get("/mine")
         self.assertTrue(mock_broadcast_chain.called)
+        self.assertTrue(mock_clear_pool.called)
         self.assertEqual(response.status_code, 200)
         self.assertIn('block', response.json())
         block_info = response.json().get('block')

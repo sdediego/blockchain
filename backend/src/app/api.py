@@ -42,6 +42,7 @@ async def mine_block():
     block = app.blockchain.last_block
     logger.info(f'[API] GET mine. Block mined: {block}.')
     await app.p2p_server.broadcast_chain()
+    app.transactions_pool.clear_pool(app.blockchain)
     return {'block': block}
 
 @app.post('/transact')
