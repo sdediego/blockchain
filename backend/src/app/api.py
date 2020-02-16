@@ -58,3 +58,10 @@ async def transact(data: dict):
         logger.info(f'[API] POST transact. Transaction made: {transaction}.')
     await app.p2p_server.broadcast_transaction(transaction)
     return {'transaction': transaction}
+
+@app.get('/balance')
+async def balance():
+    logger.info('[API] GET balance. Calculating balance.')
+    address = app.wallet.address
+    balance = app.wallet.balance
+    return {'address': address, 'balance': balance}
