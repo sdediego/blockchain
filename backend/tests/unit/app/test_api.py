@@ -56,3 +56,11 @@ class ApiTest(LoggingMixin):
         transaction = response.json().get('transaction')
         self.assertTrue(all([key in transaction for key in ('uuid', 'output', 'input')]))
         self.assertEqual(transaction.get('output').get(recipient), amount)
+
+    def test_api_get_balance_route(self):
+        response = self.client.get("/balance")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('address', response.json())
+        self.assertIn('balance', response.json())
+        balance = response.json().get('balance')
+        self.assertEqual(balance, 0)
