@@ -34,7 +34,6 @@ class Wallet(object):
 
         :param Blockchain blockchain: local copy of the blockchain.
         """
-        self.balance = 0
         self.blockchain = blockchain
         self.address = self.generate_address()
         self.private_key = self.generate_private_key()
@@ -50,6 +49,15 @@ class Wallet(object):
             f'balance: {self.balance}, '
             f'address: {self.address}, '
             f'public key: {self.public_key})')
+
+    @property
+    def balance(self):
+        """
+        Get the balance for the wallet address.
+
+        :return int: wallet address current available balance.
+        """
+        return self.get_balance(self.blockchain, self.address)
 
     @staticmethod
     def generate_address():
@@ -103,6 +111,27 @@ class Wallet(object):
             logger.warning('[Wallet] Verification error. Invalid signature.')
             return False
         return True
+
+    @staticmethod
+    def get_balance(blockchain: Blockchain, address: str):
+        """
+        Get the balance for the wallet given address from all the transactions
+        data in the blockchain. Thus the balance is calculated by adding the
+        output values for the address since the most recent transaction by
+        that address.
+
+        :param Blockchain blockchain: blockchain instance.
+        :param str address: wallet address to calculate balance for.
+        :return int: wallet address current available balance.
+        """
+        balance = 0
+        for block in blockchain.chain:
+            for transaction in block.data:
+                if transaction['input']['address'] == address:
+                    balance = transaction['output'][address]
+                elif address in transaction['output']:
+                    balance += transaction['output'][address]
+        return balance
 
     def sign(self, data: dict):
         """
