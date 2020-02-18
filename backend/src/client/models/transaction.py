@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from src.client.models.utils import get_utcnow_timestamp
 from src.client.models.wallet import Wallet
 from src.client.schemas.transaction import TransactionSchema
+from src.config.settings import MINING_REWARD, MINING_REWARD_INPUT
 from src.exceptions import TransactionError
 
 # Custom logger for transaction class module
@@ -147,14 +148,9 @@ class Transaction(object):
         :param float amount: amount of cryptocurrency to exchange.
         :return Transaction: new transaction instance.
         """
-        transaction_info = {
-            'uuid': uuid,
-            'output': output,
-            'input': input,
-            'sender': sender,
-            'recipient': recipient,
-            'amount': amount
-        }
+        kwargs = locals().copy()
+        kwargs.pop('cls')
+        transaction_info = {key: value for key, value in kwargs.items() if value is not None}
         cls.is_valid_schema(transaction_info)
         return cls(**transaction_info)
 
@@ -194,6 +190,20 @@ class Transaction(object):
             message = 'Invalid signature verification.'
             logger.error(f'[Transaction] Validation error. {message}')
             raise TransactionError(message)
+
+    @staticmethod
+    def reward_mining(wallet: Wallet):
+        """
+        Generate a reward transaction to award the miner when a new
+        block is mined. The mining reward is a fix amount.
+
+        :param Wallet wallet: miner wallet.
+        :return Transaction: reward transaction.
+        """
+        output = {wallet.address: MINING_REWARD}
+        input = MINING_REWARD_INPUT
+        uuid = Transaction.generate_uuid()
+        return Transaction.create(uuid=uuid, input=input, output=output)
 
     def update(self, sender: Wallet, recipient: str, amount: float):
         """

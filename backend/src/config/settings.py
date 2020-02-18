@@ -30,3 +30,7 @@ CHANNELS = {
     SYNCHRONIZE: 'sync',
     TRANSACTION: 'transaction'
 }
+
+# Transaction
+MINING_REWARD = 50
+MINING_REWARD_INPUT = {'address': '*--mining-reward--*'}

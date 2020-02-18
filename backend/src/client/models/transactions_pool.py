@@ -49,7 +49,7 @@ class TransactionsPool(object):
 
         :return list: serialized transactions data.
         """
-        return list(map(lambda transaction: transaction.serialize(), self.pool.values()))
+        return list(map(lambda transaction: transaction.info, self.pool.values()))
 
     def serialize(self):
         """
@@ -105,7 +105,7 @@ class TransactionsPool(object):
         """
         for block in blockchain.chain:
             for transaction in block.data:
-                if transaction.uuid in self.pool.keys():
-                    self.pool.pop(transaction.uuid)
+                if transaction.get('uuid') in self.pool.keys():
+                    self.pool.pop(transaction.get('uuid'))
                     message = f'Transaction cleared from pool: {transaction}.'
                     logger.info(f'[TransactionsPool] Clear transaction. {message}')

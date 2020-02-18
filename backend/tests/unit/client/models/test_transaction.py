@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 from src.client.models.transaction import Transaction
 from src.client.models.wallet import Wallet
+from src.config.settings import MINING_REWARD, MINING_REWARD_INPUT
 from src.exceptions import TransactionError
 from tests.unit.client.utilities import ClientMixin
 
@@ -33,9 +34,8 @@ class TransactionTest(ClientMixin):
         self.assertTrue(all([isinstance(value, float) for value in output.values()]))
 
     def test_transaction_generate_input(self):
-        wallet = Wallet()
         keys = ('timestamp', 'amount', 'address', 'public_key', 'signature')
-        input = self.transaction.generate_input(wallet)
+        input = self.transaction.generate_input(self.wallet)
         self.assertIsInstance(input, dict)
         self.assertTrue(all([key in keys for key in input.keys()]))
 
@@ -108,6 +108,11 @@ class TransactionTest(ClientMixin):
             self.assertTrue(mock_is_valid_schema.called)
             self.assertIsInstance(err, TransactionError)
             self.assertIn('Invalid signature verification', err.message)
+
+    def test_transaction_reward_mining(self):
+        transaction = Transaction.reward_mining(self.wallet)
+        self.assertEqual(transaction.input, MINING_REWARD_INPUT)
+        self.assertEqual(transaction.output[self.wallet.address], MINING_REWARD)
 
     def test_transaction_update(self):
         recipient = 'recipient'

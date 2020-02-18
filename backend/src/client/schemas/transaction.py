@@ -9,6 +9,7 @@ from pydantic import BaseModel, root_validator, validator
 from pydantic.fields import Field
 
 from src.client.models.wallet import Wallet
+from src.config.settings import MINING_REWARD_INPUT
 
 # Custom logger for transaction schema module
 fileConfig(join(dirname(dirname(dirname(__file__))), 'config', 'logging.cfg'))
@@ -20,8 +21,8 @@ class TransactionSchema(BaseModel):
     Schema for definition and validation of transaction attributes.
     """
     uuid: int = None
-    output: dict = None
     input: dict = None
+    output: dict = None
     sender: Wallet = None
     recipient: str = None
     amount: float = None
@@ -65,24 +66,6 @@ class TransactionSchema(BaseModel):
             raise ValueError(message)
         return value
 
-    @validator('output')
-    def valid_output(cls, value: dict):
-        """
-        Validate transaction output attributes are correct.
-
-        :param dict value: provided transaction output value.
-        :return dict: validated transaction output value.
-        :raise ValueError: if output attributes are invalid.
-        """
-        try:
-            assert all([uuid.UUID(hex=key) for key in value.keys()])
-            assert all([isinstance(amount, float) for amount in value.values()])
-        except AssertionError:
-            message = f'Invalid output: {value}.'
-            logger.error(f'[TransactionSchema] Validation error. {message}')
-            raise ValueError(message)
-        return value
-
     @validator('input')
     def valid_input(cls, value: dict):
         """
@@ -94,9 +77,36 @@ class TransactionSchema(BaseModel):
         """
         keys = ('timestamp', 'amount', 'address', 'public_key', 'signature')
         try:
-            assert all([key in value.keys() for key in keys])
+            if 'address' in value:
+                if value.get('address') != MINING_REWARD_INPUT.get('address'):
+                    assert all([key in value.keys() for key in keys])
+            else:
+                raise AssertionError
         except AssertionError:
             message = f'Invalid input: {value.keys()}.'
+            logger.error(f'[TransactionSchema] Validation error. {message}')
+            raise ValueError(message)
+        return value
+
+    @validator('output')
+    def valid_output(cls, value: dict, values: dict):
+        """
+        Validate transaction output attributes are correct.
+
+        :param dict value: provided transaction output value.
+        :return dict: validated transaction output value.
+        :raise ValueError: if output attributes are invalid.
+        """
+        input = values.get('input')
+        try:
+            if 'address' in input:
+                if input.get('address') != MINING_REWARD_INPUT.get('address'):
+                    assert all([uuid.UUID(hex=key) for key in value.keys()])
+                    assert all([isinstance(amount, float) for amount in value.values()])
+            else:
+                raise AssertionError
+        except AssertionError:
+            message = f'Invalid output: {value}.'
             logger.error(f'[TransactionSchema] Validation error. {message}')
             raise ValueError(message)
         return value
@@ -113,7 +123,7 @@ class TransactionSchema(BaseModel):
         try:
             assert value.balance > 0 if hasattr(value, 'balance') else False
         except AssertionError:
-            message = f'Amount must be greater than zero to make transaction.'
+            message = f'Balance must be greater than zero to make a transaction.'
             logger.error(f'[TransactionSchema] Validation error. {message}')
             raise ValueError(message)
         return value

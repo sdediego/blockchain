@@ -12,6 +12,7 @@ from tests.unit.client.utilities import ClientMixin
 class TransactionsPoolTest(ClientMixin):
 
     def setUp(self):
+        super(TransactionsPoolTest, self).setUp()
         self.pool = self._generate_transactions_pool()
         self.transactions_pool = TransactionsPool(self.pool)
         self.serialized = self.transactions_pool.serialize()
@@ -22,13 +23,6 @@ class TransactionsPoolTest(ClientMixin):
             transaction = self._generate_transaction()
             pool.update({transaction.uuid: transaction})
         return pool
-
-    def _generate_transaction(self):
-        wallet = Wallet()
-        wallet.balance = self._generate_float()
-        recipient = Wallet.generate_address()
-        amount = self._generate_float(ceil=wallet.balance)
-        return Transaction(sender=wallet, recipient=recipient, amount=amount)
 
     def test_transactions_pool_string_representation(self):
         uuids = list(self.transactions_pool.pool.keys())
@@ -42,7 +36,7 @@ class TransactionsPoolTest(ClientMixin):
         self.assertEqual(self.transactions_pool.size, size)
 
     def test_transactions_pool_data(self):
-        data = list(map(lambda transaction: transaction.serialize(), self.pool.values()))
+        data = list(map(lambda transaction: transaction.info, self.pool.values()))
         self.assertEqual(self.transactions_pool.data, data)
 
     def test_transactions_pool_serialize(self):
@@ -56,10 +50,16 @@ class TransactionsPoolTest(ClientMixin):
         self.assertListEqual(list(deserialized.pool.keys()), list(self.transactions_pool.pool.keys()))
 
     def test_transactions_pool_get_transaction(self):
-        initial = random.choice(list(self.transactions_pool.pool.values()))
-        address = initial.input.get('address')
+        wallet = Wallet()
+        output = {wallet.address: 10}
+        input = {'address': wallet.address}
+        uuid = Transaction.generate_uuid()
+        initial_transaction = Transaction(uuid=uuid, input=input, output=output)
+        address = initial_transaction.input.get('address')
+        self.assertNotIn(initial_transaction.uuid, self.transactions_pool.pool.keys())
+        self.transactions_pool.add_transaction(initial_transaction)
         transaction = self.transactions_pool.get_transaction(address)
-        self.assertEqual(transaction.uuid, initial.uuid)
+        self.assertEqual(transaction.uuid, initial_transaction.uuid)
 
     def test_transactions_pool_get_transaction_not_exists(self):
         address = 'address'
@@ -76,3 +76,11 @@ class TransactionsPoolTest(ClientMixin):
         self.transactions_pool.add_transaction(transaction)
         self.assertEqual(self.transactions_pool.size, initial_size + 1)
         self.assertIn(transaction.uuid, self.transactions_pool.pool)
+
+    def test_transactions_pool_clear_pool(self):
+        data = self.transactions_pool.data
+        blockchain = Blockchain()
+        blockchain.add_block(data)
+        self.assertEqual(self.transactions_pool.size, len(data))
+        self.transactions_pool.clear_pool(blockchain)
+        self.assertEqual(self.transactions_pool.size, 0)
