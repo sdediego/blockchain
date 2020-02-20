@@ -38,6 +38,8 @@ async def blockchain():
 async def mine_block():
     logger.info('[API] GET mine. Mining block.')
     data = app.transactions_pool.data
+    transaction_reward = Transaction.reward_mining(app.wallet)
+    data.append(transaction_reward.info)
     app.blockchain.add_block(data)
     block = app.blockchain.last_block
     logger.info(f'[API] GET mine. Block mined: {block}.')

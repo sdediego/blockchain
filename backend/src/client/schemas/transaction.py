@@ -9,7 +9,7 @@ from pydantic import BaseModel, root_validator, validator
 from pydantic.fields import Field
 
 from src.client.models.wallet import Wallet
-from src.config.settings import MINING_REWARD_INPUT
+from src.config.settings import MINING_REWARD, MINING_REWARD_INPUT
 
 # Custom logger for transaction schema module
 fileConfig(join(dirname(dirname(dirname(__file__))), 'config', 'logging.cfg'))
@@ -103,6 +103,8 @@ class TransactionSchema(BaseModel):
                 if input.get('address') != MINING_REWARD_INPUT.get('address'):
                     assert all([uuid.UUID(hex=key) for key in value.keys()])
                     assert all([isinstance(amount, float) for amount in value.values()])
+                else:
+                    assert list(value.values())[0] == MINING_REWARD
             else:
                 raise AssertionError
         except AssertionError:
