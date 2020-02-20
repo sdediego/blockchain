@@ -1,22 +1,24 @@
 # encoding: utf-8
 
+import random
 import re
 import uuid
 
 from cryptography.hazmat.backends.openssl.ec import _EllipticCurvePrivateKey
 
 from src.client.models.wallet import Wallet
-from tests.unit.logging import LoggingMixin
+from src.config.settings import MINING_REWARD
+from tests.unit.client.utilities import ClientMixin
 
 
-class WalletTest(LoggingMixin):
+class WalletTest(ClientMixin):
 
     def setUp(self):
-        self.wallet = Wallet()
+        super(WalletTest, self).setUp()
         self.data = {'test_data_key': 'test_data_value'}
 
     def test_wallet_string_representation(self):
-        attrs = ['balance', 'address', 'public key']
+        attrs = ['address', 'public key']
         self.assertTrue(all([attr in str(self.wallet) for attr in attrs]))
 
     def test_wallet_generate_address(self):
@@ -31,6 +33,11 @@ class WalletTest(LoggingMixin):
     def test_wallet_generate_public_key(self):
         public_key = Wallet.generate_public_key(self.wallet.private_key)
         self.assertIsInstance(public_key, str)
+
+    def test_wallet_balance(self):
+        blocks = random.randint(1, 10)
+        self.wallet.blockchain = self._generate_blockchain(blocks)
+        self.assertEqual(self.wallet.balance, blocks * MINING_REWARD)
 
     def test_wallet_sign(self):
         signature = self.wallet.sign(self.data)

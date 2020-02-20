@@ -46,7 +46,6 @@ class Wallet(object):
         :return str: instance representation.
         """
         return ('Wallet('
-            f'balance: {self.balance}, '
             f'address: {self.address}, '
             f'public key: {self.public_key})')
 

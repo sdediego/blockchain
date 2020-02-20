@@ -18,10 +18,10 @@ class ClientMixin(LoggingMixin):
         self.recipient = Wallet.generate_address()
         self.amount = self._generate_float(ceil=self.wallet.balance)
 
-    def _generate_blockchain(self):
+    def _generate_blockchain(self, blocks : int = 5):
         blockchain = Blockchain()
         data = []
-        for _ in range(0, 5):
+        for _ in range(0, blocks):
             transaction = self._generate_transaction()
             data.append(transaction.info)
         blockchain.add_block(data)
