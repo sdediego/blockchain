@@ -38,18 +38,18 @@ class BlockTest(BlockMixin):
         block = self.first_block.serialize()
         self.assertIsInstance(Block.deserialize(block), Block)
 
-    @patch.object(Block, '_is_valid_schema')
+    @patch.object(Block, 'is_valid_schema')
     def test_block_create_valid_schema(self, mock_is_valid_schema):
         mock_is_valid_schema.return_value = True
         block = Block.create(**self.block_info)
         self.assertTrue(mock_is_valid_schema.called)
         self.assertIsInstance(block, Block)
-        self.assertTrue(all([attr in self.block_info.keys() for attr in self.block_info.keys()]))
-        self.assertTrue(all([value in self.block_info.values() for value in self.block_info.values()]))
+        self.assertTrue(all([attr in block.info.keys() for attr in self.block_info.keys()]))
+        self.assertTrue(all([value in block.info.values() for value in self.block_info.values()]))
 
-    @patch.object(Block, '_is_valid_schema')
+    @patch.object(Block, 'is_valid_schema')
     def test_block_create_invalid_schema(self, mock_is_valid_schema):
-        err_message = 'Validation error.'
+        err_message = 'Validation error'
         mock_is_valid_schema.side_effect = Mock(side_effect=BlockError(err_message))
         with self.assertRaises(BlockError) as err:
             Block.create(**self.block_info)
@@ -63,8 +63,8 @@ class BlockTest(BlockMixin):
         for attribute in self.genesis_block.info.keys():
             self.assertIn(attribute, attributes)
 
-    @patch.object(Block, '_is_valid_schema')
-    @patch.object(Block, '_proof_of_work')
+    @patch.object(Block, 'is_valid_schema')
+    @patch.object(Block, 'proof_of_work')
     def test_block_mine_block(self, mock_proof_of_work, mock_is_valid_schema):
         mock_is_valid_schema.return_value = True
         mock_proof_of_work.return_value = self.block_info
@@ -73,8 +73,8 @@ class BlockTest(BlockMixin):
         self.assertTrue(mock_proof_of_work.called)
         self.assertIsInstance(block, Block)
 
-    @patch.object(Block, '_is_valid_schema')
-    @patch.object(Block, '_adjust_difficulty')
+    @patch.object(Block, 'is_valid_schema')
+    @patch.object(Block, 'adjust_difficulty')
     def test_block_proof_of_work(self, mock_adjust_difficulty, mock_is_valid_schema):
         mock_is_valid_schema.return_value = True
         mock_adjust_difficulty.return_value = self.first_block.difficulty + 1
@@ -85,17 +85,17 @@ class BlockTest(BlockMixin):
 
     def test_block_adjust_difficulty_increase(self):
         self.second_block.timestamp = 10
-        difficulty = Block._adjust_difficulty(self.second_block, 1)
+        difficulty = Block.adjust_difficulty(self.second_block, 1)
         self.assertEqual(difficulty, self.second_block.difficulty + 1)
 
     def test_block_adjust_difficulty_decrease(self):
         self.second_block.timestamp = 10
-        difficulty = Block._adjust_difficulty(self.second_block, get_utcnow_timestamp())
+        difficulty = Block.adjust_difficulty(self.second_block, get_utcnow_timestamp())
         self.assertEqual(difficulty, self.second_block.difficulty - 1)
 
     def test_block_adjust_difficulty_set_to_one(self):
         self.second_block.timestamp = 1
-        difficulty = Block._adjust_difficulty(self.second_block, get_utcnow_timestamp())
+        difficulty = Block.adjust_difficulty(self.second_block, get_utcnow_timestamp())
         self.assertEqual(difficulty, 1)
 
     def test_block_is_valid(self):
@@ -105,6 +105,8 @@ class BlockTest(BlockMixin):
         self.second_block.hash = '1nval1d ha57'
         with self.assertRaises(BlockError) as err:
             Block.is_valid(self.first_block, self.second_block)
+            self.assertIsInstance(err, BlockError)
+            self.assertIn('Validation error', err.message)
 
     def test_block_is_valid_hashes_validation_error(self):
         self.first_block.hash = '1nval1d ha57'

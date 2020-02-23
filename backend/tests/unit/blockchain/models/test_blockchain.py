@@ -5,6 +5,8 @@ from unittest.mock import Mock, patch
 
 from src.blockchain.models.block import Block
 from src.blockchain.models.blockchain import Blockchain
+from src.client.models.transaction import Transaction
+from src.client.models.wallet import Wallet
 from src.exceptions import BlockchainError
 from tests.unit.blockchain.utilities import BlockchainMixin
 
@@ -46,18 +48,18 @@ class BlockchainTest(BlockchainMixin):
         self.blockchain.add_block(new_block.data)
         self.assertNotEqual(self.blockchain.length, self.chain_length)
 
-    def test_blockchain_serialization(self):
+    def test_blockchain_serialize(self):
         self.assertIsInstance(self.serialized, list)
         self.assertTrue(all([isinstance(block, str) for block in self.serialized]))
 
-    def test_blockchain_deserialization(self):
+    def test_blockchain_deserialize(self):
         deserialized = Blockchain.deserialize(self.serialized)
         self.assertIsInstance(deserialized, Blockchain)
         self.assertTrue(hasattr(deserialized, 'chain'))
         for block_one, block_two in zip(deserialized.chain, self.blockchain.chain):
             self.assertTrue(block_one == block_two)
 
-    @patch.object(Blockchain, '_is_valid_schema')
+    @patch.object(Blockchain, 'is_valid_schema')
     def test_blockchain_create_valid_schema(self, mock_is_valid_schema):
         mock_is_valid_schema.return_value = True
         blockchain = Blockchain.create(self.valid_chain)
@@ -65,7 +67,7 @@ class BlockchainTest(BlockchainMixin):
         self.assertIsInstance(blockchain, Blockchain)
         self.assertEqual(blockchain.chain, self.valid_chain)
 
-    @patch.object(Blockchain, '_is_valid_schema')
+    @patch.object(Blockchain, 'is_valid_schema')
     def test_blockchain_create_invalid_schema(self, mock_is_valid_schema):
         err_message = '[Blockchain] Validation error.'
         mock_is_valid_schema.side_effect = Mock(side_effect=BlockchainError(err_message))
@@ -116,14 +118,14 @@ class BlockchainTest(BlockchainMixin):
         self.assertTrue(initial_length < self.blockchain.length)
         self.assertEqual(self.blockchain.length, len(longer_chain))
 
-    def test_set_valid_chain_unvalid(self):
+    def test_set_valid_chain_invalid(self):
         initial_length = self.blockchain.length
         err_message = '[Blockchain] Validation error.'
-        with self.assertRaises(BlockchainError) as err:
+        with self.assertRaises(AssertionError) as err:
             self.blockchain.set_valid_chain(self.invalid_chain)
             self.assertTrue(len(self.invalid_chain) > self.blockchain.length)
             self.assertTrue(self.blockchain.length, initial_length)
-            self.assertIsInstance(err, BlockchainError)
+            self.assertIsInstance(err, AssertionError)
             self.assertIn(err_message, err.message)
 
     def test_blockchain_is_valid_schema_valid(self):
@@ -133,5 +135,50 @@ class BlockchainTest(BlockchainMixin):
         err_message = '[Blockchain] Validation error.'
         with self.assertRaises(BlockchainError) as err:
             Blockchain.is_valid(self.invalid_chain)
+            self.assertIsInstance(err, BlockchainError)
+            self.assertIn(err_message, err.message)
+
+    def test_blockchain_is_valid_transaction_data(self):
+        Blockchain.is_valid_transaction_data(self.blockchain.chain)
+
+    def test_blockchain_is_valid_transaction_data_invalid_transaction(self):
+        invalid_transaction = self._generate_transaction()
+        invalid_transaction.input['signature'] = Wallet().sign(invalid_transaction.output)
+        self.blockchain.add_block([invalid_transaction.info])
+        err_message = 'Invalid transaction'
+        with self.assertRaises(BlockchainError) as err:
+            Blockchain.is_valid_transaction_data(self.blockchain.chain)
+            self.assertIsInstance(err, BlockchainError)
+            self.assertIn(err_message, err.message)
+
+    def test_blockchain_is_valid_transaction_data_duplicate_transaction(self):
+        transaction = self._generate_transaction()
+        self.blockchain.add_block([transaction.info, transaction.info])
+        err_message = 'Repetead transaction uuid found'
+        with self.assertRaises(BlockchainError) as err:
+            Blockchain.is_valid_transaction_data(self.blockchain.chain)
+            self.assertIsInstance(err, BlockchainError)
+            self.assertIn(err_message, err.message)
+
+    def test_blockchain_is_valid_transaction_data_multiple_rewards(self):
+        reward_transaction_1 = Transaction.reward_mining(Wallet())
+        reward_transaction_2 = Transaction.reward_mining(Wallet())
+        self.blockchain.add_block([reward_transaction_1.info, reward_transaction_2.info])
+        err_message = 'Multiple mining rewards in the same block'
+        with self.assertRaises(BlockchainError) as err:
+            Blockchain.is_valid_transaction_data(self.blockchain.chain)
+            self.assertIsInstance(err, BlockchainError)
+            self.assertIn(err_message, err.message)
+
+    def test_blockchain_is_valid_transaction_invalid_historic_balance(self):
+        wallet = Wallet()
+        invalid_transaction = self._generate_transaction(wallet)
+        invalid_transaction.output[wallet.address] = 1000
+        invalid_transaction.input['amount'] = 1001
+        invalid_transaction.input['signature'] = wallet.sign(invalid_transaction.output)
+        self.blockchain.add_block([invalid_transaction.info])
+        err_message = 'historic balance inconsistency'
+        with self.assertRaises(BlockchainError) as err:
+            Blockchain.is_valid_transaction_data(self.blockchain.chain)
             self.assertIsInstance(err, BlockchainError)
             self.assertIn(err_message, err.message)
