@@ -91,13 +91,13 @@ class Blockchain(object):
         and checking blockchain data integrity.
 
         :param list chain: chain of blocks.
-        :return Blockchain: validated blockchain instance.
+        :return Blockchain: validated blockchain.
         """
-        cls._is_valid_schema(chain)
+        cls.is_valid_schema(chain)
         return cls(chain)
 
     @staticmethod
-    def _is_valid_schema(chain: list):
+    def is_valid_schema(chain: list):
         """
         Perform blockchain attribute validation and check data integrity.
 
@@ -121,6 +121,7 @@ class Blockchain(object):
         """
         block = Block.mine_block(self.last_block, data)
         self.chain.append(block)
+        return block
 
     def set_valid_chain(self, chain: list):
         """
@@ -131,11 +132,12 @@ class Blockchain(object):
         """
         try:
             assert len(chain) > self.length
-        except AssertionError:
-            message = 'Incoming chain is not longer than local chain'
+            self.is_valid(chain)
+        except (AssertionError, BlockchainError) as err:
+            len_error = 'Incoming chain is not longer than local chain.'
+            message = err.message if hasattr(err, 'message') else len_error
             logger.error(f'[Blockchain] Replace error. {message}')
         else:
-            self.is_valid(chain)
             self.chain = chain
             message = f'Blockchain length: {self.length}. Last block: {self.last_block}.'
             logger.info(f'[Blockchain] Replace successfull. {message}')
@@ -149,11 +151,11 @@ class Blockchain(object):
 
         :param list chain: candidate chain to become the distributed chain.
         """
-        cls._is_valid_schema(chain)
-        cls._is_valid_transaction_data(chain)
+        cls.is_valid_schema(chain)
+        cls.is_valid_transaction_data(chain)
 
     @staticmethod
-    def _is_valid_transaction_data(chain: list):
+    def is_valid_transaction_data(chain: list):
         """
         Perform checks to enforce the consistnecy of transactions data in the chain blocks:
         Each transaction mush only appear once in the chain, there can only be one mining

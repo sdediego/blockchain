@@ -61,7 +61,7 @@ class Block(object):
             f'last_hash: {self.last_hash}, '
             f'hash: {self.hash})')
 
-    def __eq__(self, block):
+    def __eq__(self, block: 'Block'):
         """
         Compare two Block instances to check wether if both are the same
         block or not based on their unique hashes.
@@ -82,10 +82,11 @@ class Block(object):
 
     def serialize(self):
         """
-        Stringify the block instance to be able to send the block over
+        Stringify the Block instance to be able to send the block over
         the network to the rest of the peer nodes.
 
         :return str: block instance attributes in string format.
+        :raise BlockError: on data encoding error.
         """
         try:
             return json.dumps(self.info)
@@ -97,10 +98,11 @@ class Block(object):
     @classmethod
     def deserialize(cls, block_info: str):
         """
-        Create a new block instance from the provided stringified block.
+        Create a new Block instance from the provided stringified block.
 
-        :param str block: stringified block.
+        :param str block_info: stringified block.
         :return Block: block instance created from provided attributes.
+        :raise BlockError: on data decoding error.
         """
         try:
             block_info = json.loads(block_info)
@@ -126,20 +128,14 @@ class Block(object):
         :param str hash: block data unique hash to prevent fraud.
         :return Block: new class instance.
         """
-        block_info = {
-            'index': index,
-            'timestamp': timestamp,
-            'nonce': nonce,
-            'difficulty': difficulty,
-            'data': data,
-            'last_hash': last_hash,
-            'hash': hash
-        }
-        cls._is_valid_schema(block_info)
+        kwargs = locals().copy()
+        kwargs.pop('cls')
+        block_info = {key: value for key, value in kwargs.items()}
+        cls.is_valid_schema(block_info)
         return cls(**block_info)
 
     @staticmethod
-    def _is_valid_schema(block_info: dict):
+    def is_valid_schema(block_info: dict):
         """
         Perform block attributes validations and check block data integrity.
 
@@ -163,9 +159,9 @@ class Block(object):
         return cls(**GENESIS_BLOCK)
 
     @classmethod
-    def mine_block(cls, last_block, data: list):
+    def mine_block(cls, last_block: 'Block', data: list):
         """
-        Create a new block instance to add to the blockchain.
+        Create a new Block instance to add to the blockchain.
 
         :param Block last_block: current last block of the blockchain.
         :param list data: transactions between the nodes in the network.
@@ -175,14 +171,14 @@ class Block(object):
         block['index'] = last_block.index + 1
         block['timestamp'] = utils.get_utcnow_timestamp()
         block['nonce'] = 0
-        block['difficulty'] = cls._adjust_difficulty(last_block, block['timestamp'])
+        block['difficulty'] = cls.adjust_difficulty(last_block, block['timestamp'])
         block['data'] = data
         block['last_hash'] = last_block.hash
-        block = cls._proof_of_work(last_block, block)
+        block = cls.proof_of_work(last_block, block)
         return cls.create(**block)
 
     @classmethod
-    def _proof_of_work(cls, last_block, block: dict):
+    def proof_of_work(cls, last_block: 'Block', block: dict):
         """
         Consensus protocol requiring certain computational effort to mine
         a new block to be able to add it to the blockchain. The solution
@@ -197,13 +193,13 @@ class Block(object):
         while not utils.hex_to_binary(hash).startswith('0' * block['difficulty']):
             block['nonce'] += 1
             block['timestamp'] = utils.get_utcnow_timestamp()
-            block['difficulty'] = cls._adjust_difficulty(last_block, block['timestamp'])
+            block['difficulty'] = cls.adjust_difficulty(last_block, block['timestamp'])
             hash = utils.hash_block(*block_values)
         block['hash'] = hash
         return block
 
     @staticmethod
-    def _adjust_difficulty(last_block, timestamp: int):
+    def adjust_difficulty(last_block: 'Block', timestamp: int):
         """
         Adjust new block mining difficulty to maintain stable mining rate.
 
@@ -216,7 +212,7 @@ class Block(object):
         return last_block.difficulty - 1 if last_block.difficulty > 1 else 1
 
     @classmethod
-    def is_valid(cls, last_block, block):
+    def is_valid(cls, last_block: 'Block', block: 'Block'):
         """
         Perform checks to candidate block before adding it to the blockchain
         to prevent fraudulent insertions into the blockchain. Block attributes
@@ -226,7 +222,7 @@ class Block(object):
         :param Block block: candidate block to add to the blockchain.
         :raise BlockError: on invalid block attributes.
         """
-        cls._is_valid_schema(block.info)
+        cls.is_valid_schema(block.info)
         message = None
         if block.last_hash != last_block.hash:
             message = (f'Block {last_block.index} hash "{last_block.hash}" and '

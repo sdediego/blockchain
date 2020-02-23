@@ -40,8 +40,7 @@ async def mine_block():
     data = app.transactions_pool.data
     transaction_reward = Transaction.reward_mining(app.wallet)
     data.append(transaction_reward.info)
-    app.blockchain.add_block(data)
-    block = app.blockchain.last_block
+    block = app.blockchain.add_block(data)
     logger.info(f'[API] GET mine. Block mined: {block}.')
     await app.p2p_server.broadcast_chain()
     app.transactions_pool.clear_pool(app.blockchain)

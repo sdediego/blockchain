@@ -22,7 +22,14 @@ def get_utcnow_timestamp():
     return int(datetime.utcnow().timestamp() * 1000)
 
 
-def serialize(data):
+def serialize(data: dict):
+    """
+    Serialize the data.
+
+    :param dict data: data to serialize.
+    :return str: stringified data.
+    :raise WalletError: on data encoding error.
+    """
     try:
         return json.dumps(data)
     except (OverflowError, TypeError) as err:

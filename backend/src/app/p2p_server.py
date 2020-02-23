@@ -20,7 +20,7 @@ from src.client.models.transactions_pool import TransactionsPool
 from src.config.settings import CHANNELS, HEARTBEAT_RATE
 from src.exceptions import P2PServerError
 
-# Custom logger for p2p_server module
+# Custom logger for p2p server class module
 fileConfig(join(dirname(dirname(__file__)), 'config', 'logging.cfg'))
 logger = getLogger(__name__)
 
@@ -230,8 +230,8 @@ class P2PServer(object):
                 if register: self._add_socket(socket)
                 await callback(socket, *args)
         except (ConnectionError, WebSocketException):
-            warning_msg = f'Not connected to uri: {uri}'
-            logger.warning(f'[P2PServer] Connection error. {warning_msg}.')
+            warning_msg = f'Not connected to uri: {uri}.'
+            logger.warning(f'[P2PServer] Connection error. {warning_msg}')
 
     async def _send_node(self, socket: Socket):
         """

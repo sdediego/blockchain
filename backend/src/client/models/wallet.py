@@ -124,6 +124,8 @@ class Wallet(object):
         :return int: wallet address current available balance.
         """
         balance = 0
+        if not blockchain:
+            return balance
         for block in blockchain.chain:
             for transaction in block.data:
                 if transaction['input']['address'] == address:

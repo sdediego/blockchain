@@ -6,6 +6,7 @@ import uuid
 from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
+from typing import Union
 
 from pydantic import ValidationError
 
@@ -170,13 +171,14 @@ class Transaction(object):
             raise TransactionError(message)
 
     @staticmethod
-    def is_valid_transaction(transaction: 'Transaction'):
+    def is_valid(transaction: Union[dict, 'Transaction']):
         """
         Perform transaction logic validations.
 
         :param Transaction transaction: transaction instance to verify.
         :raise TransactionError: on transaction validation error.
         """
+        transaction = transaction if not isinstance(transaction, dict) else Transaction(**transaction)
         Transaction.is_valid_schema(transaction.info)
         amount = sum(transaction.output.values())
         if not transaction.input.get('amount') == amount:
