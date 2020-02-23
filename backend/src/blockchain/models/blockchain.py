@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from src.blockchain.models.block import Block
 from src.blockchain.schemas.blockchain import BlockchainSchema
 from src.config.settings import MINING_REWARD_INPUT
-from src.exceptions import BlockchainError
+from src.exceptions import BlockchainError, TransactionError
 
 # Custom logger for blockchain class module
 fileConfig(join(dirname(dirname(dirname(__file__))), 'config', 'logging.cfg'))
@@ -165,11 +165,18 @@ class Blockchain(object):
         :raise BlockchainError: on invalid transaction data.
         """
         from src.client.models.transaction import Transaction
+        from src.client.models.wallet import Wallet
         transaction_uuids = set()
         for index, block in enumerate(chain, start=0):
             has_reward = False
             for transaction_info in block.data:
-                transaction = Transaction.create(**transaction_info)
+                try:
+                    transaction = Transaction.create(**transaction_info)
+                    Transaction.is_valid(transaction)
+                except TransactionError as err:
+                    message = f'Invalid transaction. {err.message}.'
+                    logger.error(f'[Blockchain] Validation error. {message}')
+                    raise BlockchainError(message)
 
                 if transaction.uuid in transaction_uuids:
                     message = f'Repetead transaction uuid found: {transaction.uuid}.'
@@ -190,8 +197,6 @@ class Blockchain(object):
                     historic_balance = Wallet.get_balance(historic_blockchain, address)
                     amount = transaction.input.get('amount')
                     if historic_balance != amount:
-                        message = f'Address {address} historic balance {historic_balance} inconsistency: {amount}.'
+                        message = f'Address {address} historic balance inconsistency: {historic_balance} ({amount}).'
                         logger.error(f'[Blockchain] Validation error. {message}')
                         raise BlockchainError(message)
-
-                Transaction.is_valid(transaction)

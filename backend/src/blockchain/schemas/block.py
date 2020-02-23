@@ -6,11 +6,12 @@ from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ValidationError, validator
 from pydantic.fields import Field
 
 from src.blockchain.models.utils import hash_block, hex_to_binary
 from src.config.settings import BLOCK_HASH_LENGTH, BLOCK_TIMESTAMP_LENGTH
+
 
 # Custom logger for block schema module
 fileConfig(join(dirname(dirname(dirname(__file__))), 'config', 'logging.cfg'))
@@ -72,11 +73,20 @@ class BlockSchema(BaseModel):
     @validator('data')
     def valid_data(cls, value: list):
         """
-        Validate data value.
+        Validate transactions data value.
 
         :param list value: provided data value.
+        :return list: validated transactions list data.
+        :raise ValueError: if transaction data is invalid.
         """
-        # TODO
+        from src.client.schemas.transaction import TransactionSchema
+        try:
+            for transaction_info in value:
+                TransactionSchema(**transaction_info)
+        except ValidationError as err:
+            message = re.sub('\s+',' ', err.json())
+            logger.error(f'[BlockSchema] Validation error. {message}')
+            raise ValueError(message)
         return value
 
     @validator('last_hash', 'hash')

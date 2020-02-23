@@ -37,8 +37,8 @@ async def blockchain():
 @app.get('/mine')
 async def mine_block():
     logger.info('[API] GET mine. Mining block.')
-    data = app.transactions_pool.data
     transaction_reward = Transaction.reward_mining(app.wallet)
+    data = app.transactions_pool.data
     data.append(transaction_reward.info)
     block = app.blockchain.add_block(data)
     logger.info(f'[API] GET mine. Block mined: {block}.')
@@ -48,6 +48,7 @@ async def mine_block():
 
 @app.post('/transact')
 async def transact(data: dict):
+    logger.info('[API] POST transact. New transaction.')
     recipient = data.get('recipient')
     amount = data.get('amount')
     transaction = app.transactions_pool.get_transaction(app.wallet.address)
@@ -65,4 +66,5 @@ async def balance():
     logger.info('[API] GET balance. Calculating balance.')
     address = app.wallet.address
     balance = app.wallet.balance
+    logger.info(f'[API] GET balance. Address: {address}, balance: {balance}.')
     return {'address': address, 'balance': balance}

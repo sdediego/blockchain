@@ -102,7 +102,7 @@ class TransactionSchema(BaseModel):
             if 'address' in input:
                 if input.get('address') != MINING_REWARD_INPUT.get('address'):
                     assert all([uuid.UUID(hex=key) for key in value.keys()])
-                    assert all([isinstance(amount, float) for amount in value.values()])
+                    assert all([isinstance(amount, (int, float)) for amount in value.values()])
                 else:
                     assert list(value.values())[0] == MINING_REWARD
             else:

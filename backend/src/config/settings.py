@@ -23,12 +23,12 @@ HEARTBEAT_RATE = 5  # seconds
 NODE = 'node'
 CHAIN = 'chain'
 SYNCHRONIZE = 'sync'
-TRANSACTION = 'transaction'
+TRANSACTION = 'transact'
 CHANNELS = {
     NODE: 'node',
     CHAIN: 'chain',
     SYNCHRONIZE: 'sync',
-    TRANSACTION: 'transaction'
+    TRANSACTION: 'transact'
 }
 
 # Transaction

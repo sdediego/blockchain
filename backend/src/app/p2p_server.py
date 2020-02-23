@@ -258,7 +258,7 @@ class P2PServer(object):
         :param Socket socket: outgoing socket client.
         :param Transaction transaction: transaction instance to send.
         """
-        message = {'channel': CHANNELS.get('transaction'), 'content': transaction.serialize()}
+        message = {'channel': CHANNELS.get('transact'), 'content': transaction.serialize()}
         await self._send(socket, message)
 
     async def _send(self, socket: Socket, message: dict):
@@ -297,7 +297,7 @@ class P2PServer(object):
                 blockchain = Blockchain.deserialize(chain)
                 self.blockchain.set_valid_chain(blockchain.chain)
                 self.transactions_pool.clear_pool(self.blockchain)
-            elif channel == CHANNELS.get('transaction'):
+            elif channel == CHANNELS.get('transact'):
                 transaction_info = data.get('content')
                 logger.info(f'[P2PServer] Transaction received. {transaction_info}.')
                 transaction = Transaction.deserialize(transaction_info)
