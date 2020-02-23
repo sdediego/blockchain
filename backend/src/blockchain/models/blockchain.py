@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from src.blockchain.models.block import Block
 from src.blockchain.schemas.blockchain import BlockchainSchema
+from src.config.settings import MINING_REWARD_INPUT
 from src.exceptions import BlockchainError
 
 # Custom logger for blockchain class module
@@ -149,3 +150,46 @@ class Blockchain(object):
         :param list chain: candidate chain to become the distributed chain.
         """
         cls._is_valid_schema(chain)
+        cls._is_valid_transaction_data(chain)
+
+    @staticmethod
+    def _is_valid_transaction_data(chain: list):
+        """
+        Perform checks to enforce the consistnecy of transactions data in the chain blocks:
+        Each transaction mush only appear once in the chain, there can only be one mining
+        reward per block and each transaction must be valid.
+
+        :param list chain: blockchain chain of blocks.
+        :raise BlockchainError: on invalid transaction data.
+        """
+        from src.client.models.transaction import Transaction
+        transaction_uuids = set()
+        for index, block in enumerate(chain, start=0):
+            has_reward = False
+            for transaction_info in block.data:
+                transaction = Transaction.create(**transaction_info)
+
+                if transaction.uuid in transaction_uuids:
+                    message = f'Repetead transaction uuid found: {transaction.uuid}.'
+                    logger.error(f'[Blockchain] Validation error. {message}')
+                    raise BlockchainError(message)
+                transaction_uuids.add(transaction.uuid)
+
+                address = transaction.input.get('address')
+                if address == MINING_REWARD_INPUT.get('address'):
+                    if has_reward:
+                        message = f'Multiple mining rewards in the same block: {block}.'
+                        logger.error(f'[Blockchain] Validation error. {message}')
+                        raise BlockchainError(message)
+                    has_reward = True
+                else:
+                    historic_blockchain = Blockchain()
+                    historic_blockchain.chain = chain[:index]
+                    historic_balance = Wallet.get_balance(historic_blockchain, address)
+                    amount = transaction.input.get('amount')
+                    if historic_balance != amount:
+                        message = f'Address {address} historic balance {historic_balance} inconsistency: {amount}.'
+                        logger.error(f'[Blockchain] Validation error. {message}')
+                        raise BlockchainError(message)
+
+                Transaction.is_valid(transaction)
