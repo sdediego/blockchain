@@ -96,14 +96,14 @@ class P2PServer(object):
         """
         self.server.close()
 
-    async def connect_nodes(self, uris: Union[str, list]):
+    async def connect_nodes(self, uris: Union[str, list] = None):
         """
         Register network nodes uris to be able to communicate.
         Send local socket server uri to the rest of the nodes.
 
         :param [str, list] uris: uris of the rest of the network nodes.
         """
-        self._add_uris(uris)
+        if uris: self.add_uris(uris)
         await self._connect_sockets(self._send_node, True)
 
     async def heartbeat(self):
@@ -128,7 +128,7 @@ class P2PServer(object):
         logger.info(f'[P2PServer] Socket received: {self._get_remote_address(socket)}.')
         await self._message_handler(socket)
 
-    def _add_uris(self, uris: Union[str, list]):
+    def add_uris(self, uris: Union[str, list]):
         """
         Register unique uris of the rest of the network nodes servers.
 
@@ -284,11 +284,11 @@ class P2PServer(object):
                 uri = data.get('content')
                 info_msg = f'Uri listed. {uri}.'
                 logger.info(f'[P2PServer] Node received. {info_msg}')
-                self._add_uris(uri)
+                self.add_uris(uri)
                 await self._connect_socket(self._send_chain, uri)
             elif channel == CHANNELS.get('sync'):
                 uris = data.get('content')
-                self._add_uris(uris)
+                self.add_uris(uris)
                 info_msg = f'Total uris: {self.nodes.uris.array}.'
                 logger.info(f'[P2PServer] Synchronization finished. {info_msg}')
             elif channel == CHANNELS.get('chain'):

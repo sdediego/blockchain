@@ -51,7 +51,7 @@ class P2PServerTest(NodesNetworkMixin):
         self.p2p_server.close()
 
     @async_test
-    @async_patch.object(P2PServer, '_add_uris')
+    @async_patch.object(P2PServer, 'add_uris')
     @async_patch.object(P2PServer, '_message_handler')
     async def test_p2p_server_connect_nodes(self, mock_handler, mock_add_uris):
         mock_add_uris.return_value = None
@@ -68,13 +68,13 @@ class P2PServerTest(NodesNetworkMixin):
 
     def test_p2p_server_add_uris(self):
         uris = self._generate_uris(random.randint(1, 10))
-        self.p2p_server._add_uris(uris)
+        self.p2p_server.add_uris(uris)
         self.assertEqual(self.p2p_server.nodes.uris.size, len(uris))
 
     def test_p2p_server_add_uris_server_listener(self):
         uris = self._generate_uris(random.randint(1, 10))
         uris.append(self.p2p_server.uri)
-        self.p2p_server._add_uris(uris.copy())
+        self.p2p_server.add_uris(uris.copy())
         self.assertEqual(self.p2p_server.nodes.uris.size, len(uris) - 1)
 
     def test_p2p_server_add_socket(self):
