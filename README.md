@@ -36,9 +36,9 @@ Make sure that the virtual environment is activated.
 Start several application instances in localhost.
 From the backend directory in different terminals:
 ```sh
-python -m src.app.www -ap 5000 -pp 6000
-python -m src.app.www -ap 5001 -pp 6001 -n "ws://127.0.0.1:6000"
-python -m src.app.www -ap 5002 -pp 6002 -n "ws://127.0.0.1:6000, ws://127.0.0.1:6001"
+python -m src.bin.www -ap 5000 -pp 6000
+python -m src.bin.www -ap 5001 -pp 6001 -n "ws://127.0.0.1:6000"
+python -m src.bin.www -ap 5002 -pp 6002 -n "ws://127.0.0.1:6000, ws://127.0.0.1:6001"
 ```
 where  
 ap = api port  
