@@ -2,6 +2,7 @@
 
 import asyncio
 import random
+import uuid
 from unittest.mock import patch
 
 from starlette.testclient import TestClient
@@ -47,8 +48,8 @@ class ApiTest(LoggingMixin):
     def test_api_post_transact_route(self, mock_broadcast_transaction):
         mock_broadcast_transaction.return_value = asyncio.Future()
         mock_broadcast_transaction.return_value.set_result(None)
-        recipient = "recipient"
-        amount = random.uniform(0, 100)
+        recipient = uuid.uuid4().hex
+        amount = random.uniform(0, 25)
         response = self.client.post("/transact", json={"recipient": recipient, "amount": amount})
         self.assertTrue(mock_broadcast_transaction.called)
         self.assertEqual(response.status_code, 200)

@@ -180,18 +180,19 @@ class Transaction(object):
         """
         transaction = transaction if not isinstance(transaction, dict) else Transaction(**transaction)
         Transaction.is_valid_schema(transaction.info)
-        amount = sum(transaction.output.values())
-        if not transaction.input.get('amount') == amount:
-            message = f'Invalid transaction amount: {amount}.'
-            logger.error(f'[Transaction] Validation error. {message}')
-            raise TransactionError(message)
-        public_key = transaction.input.get('public_key')
-        signature = transaction.input.get('signature')
-        output = transaction.output
-        if not Wallet.verify(public_key, signature, output):
-            message = 'Invalid signature verification.'
-            logger.error(f'[Transaction] Validation error. {message}')
-            raise TransactionError(message)
+        if transaction.input.get('address') != MINING_REWARD_INPUT.get('address'):
+            amount = sum(transaction.output.values())
+            if not transaction.input.get('amount') == amount:
+                message = f'Invalid transaction amount: {amount}.'
+                logger.error(f'[Transaction] Validation error. {message}')
+                raise TransactionError(message)
+            public_key = transaction.input.get('public_key')
+            signature = transaction.input.get('signature')
+            output = transaction.output
+            if not Wallet.verify(public_key, signature, output):
+                message = 'Invalid signature verification.'
+                logger.error(f'[Transaction] Validation error. {message}')
+                raise TransactionError(message)
 
     @staticmethod
     def reward_mining(wallet: Wallet):

@@ -89,6 +89,14 @@ class TransactionTest(ClientMixin):
         self.assertTrue(mock_is_valid_schema.called)
 
     @patch.object(Transaction, 'is_valid_schema')
+    def test_transaction_is_valid_mining_reward(self, mock_is_valid_schema):
+        mock_is_valid_schema.return_value = True
+        wallet = Wallet()
+        transaction = Transaction.reward_mining(wallet)
+        Transaction.is_valid(transaction)
+        self.assertTrue(mock_is_valid_schema.called)
+
+    @patch.object(Transaction, 'is_valid_schema')
     def test_transaction_is_valid_invalid_output(self, mock_is_valid_schema):
         mock_is_valid_schema.return_value = True
         self.transaction.output[self.wallet.address] = self._generate_float()
