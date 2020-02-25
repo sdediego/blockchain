@@ -56,8 +56,9 @@ async def transact(data: dict):
         transaction.update(app.wallet, recipient, amount)
         logger.info(f'[API] POST transact. Transaction updated: {transaction}.')
     else:
-        transaction = Transaction(sender=app.wallet, recipient=recipient, amount=amount)  # create
+        transaction = Transaction.create(sender=app.wallet, recipient=recipient, amount=amount)
         logger.info(f'[API] POST transact. Transaction made: {transaction}.')
+    app.transactions_pool.add_transaction(transaction)
     await app.p2p_server.broadcast_transaction(transaction)
     return {'transaction': transaction}
 
