@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Block from './Block';
 import { API_URL } from '../config';
 
 function Blockchain() {
@@ -21,7 +22,7 @@ function Blockchain() {
       </header>
       <br />
       <div className="BlockchainChain">
-        {blockchain.map(block => <div key={block.hash}>{JSON.stringify(block)}</div>)}
+        {blockchain.map(block => <Block key={block.hash} block={block} />)}
       </div>
     </div>
   );

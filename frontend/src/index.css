@@ -18,3 +18,13 @@ body {
   margin: 10%;
   margin-top: 5%;
 }
+
+.Block {
+  border: 1px solid #444;
+  padding: 10%;
+  margin: 2%;
+}
+
+.WalletInfo {
+  width: 500px;
+}
