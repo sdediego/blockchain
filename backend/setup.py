@@ -57,14 +57,28 @@ setup(
     ],
     python_requires='>=3.7',
     test_suite='tests',
-    entry_points={},
-    keywords='',
+    entry_points={
+        'console_scripts': [
+            'run = src.bin.www',
+        ],
+    },
+    keywords='api asynchronous backend blockchain client consensus cryptocurrency '
+             'cryptography fastapi mining network nodes peer-to-peer proof-of-work '
+             'python socket-server transactions transactions-pool wallet websocket',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Environment :: Web Environment',
+        'Framework :: Fastapi',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Operating System :: OS Independent',
+        'Topic :: Office/Business :: Financial',
+        'Topic :: Internet :: WWW/HTTP :: HTTP Servers',
+        'Topic :: Security :: Cryptography',
+        'Topic :: Software Development',
+        'Topic :: System :: Networking',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
