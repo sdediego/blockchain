@@ -5,12 +5,14 @@ from logging.config import fileConfig
 from os.path import dirname, join
 
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 
 from src.app.p2p_server import P2PServer
 from src.blockchain.models.blockchain import Blockchain
 from src.client.models.transaction import Transaction
 from src.client.models.transactions_pool import TransactionsPool
 from src.client.models.wallet import Wallet
+from src.config.settings import origins
 
 # Custom logger for api module
 fileConfig(join(dirname(dirname(__file__)), 'config', 'logging.cfg'))
@@ -18,6 +20,14 @@ logger = getLogger(__name__)
 
 
 app = FastAPI(__name__)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 app.blockchain = Blockchain()
 app.wallet = Wallet(app.blockchain)

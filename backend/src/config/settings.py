@@ -17,6 +17,11 @@ GENESIS_BLOCK = {
 }
 GENESIS_BLOCK['hash'] = hash_block(*GENESIS_BLOCK.values())
 
+# API Server
+origins = [
+    "http://localhost:3000",
+]
+
 # P2P Server
 HEARTBEAT_RATE = 5  # seconds
 
