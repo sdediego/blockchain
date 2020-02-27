@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '../config';
+import Blockchain from './Blockchain';
 
 function App() {
   const [walletInfo, setWalletInfo] = useState({});
+  const { address, balance } = walletInfo;
 
   useEffect(() => {
-    axios.get('http://localhost:5000/balance')
+    axios.get(`${ API_URL }/balance`)
       .then(response => response.data)
       .then(data => setWalletInfo(data));
   }, []);
@@ -17,9 +20,11 @@ function App() {
       </header>
       <br />
       <div className="WalletInfo">
-        <div>Address: {walletInfo.address}</div>
-        <div>Address: {walletInfo.balance}</div>
+        <div>Address: {address}</div>
+        <div>Address: {balance}</div>
       </div>
+      <br />
+      <Blockchain />
     </div>
   );
 }

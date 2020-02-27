@@ -13,3 +13,8 @@ body {
   flex-direction: column;
   align-items: center;
 }
+
+.Blockchain {
+  margin: 10%;
+  margin-top: 5%;
+}
