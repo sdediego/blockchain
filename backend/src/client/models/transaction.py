@@ -74,8 +74,11 @@ class Transaction(object):
         :return dict: transaction output data.
         """
         output = {}
-        output[recipient] = amount
-        output[sender.address] = sender.balance - amount
+        if recipient != sender.address:
+            output[recipient] = amount
+            output[sender.address] = sender.balance - amount
+        else:
+            output[sender.address] = sender.balance
         return output
 
     def generate_input(self, sender: Wallet):

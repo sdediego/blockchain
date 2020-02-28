@@ -33,6 +33,13 @@ class TransactionTest(ClientMixin):
         self.assertTrue(all([isinstance(key, str) for key in output.keys()]))
         self.assertTrue(all([isinstance(value, float) for value in output.values()]))
 
+    def test_transaction_generate_output_same_address(self):
+        output = Transaction.generate_output(self.wallet, self.wallet.address, self.amount)
+        self.assertIsInstance(output, dict)
+        self.assertTrue(len(output.keys()), 1)
+        self.assertEqual(output.get(self.wallet.address), self.wallet.balance)
+        self.assertNotEqual(output.get(self.wallet.address), self.amount)
+
     def test_transaction_generate_input(self):
         keys = ('timestamp', 'amount', 'address', 'public_key', 'signature')
         input = self.transaction.generate_input(self.wallet)
