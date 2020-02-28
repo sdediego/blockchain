@@ -21,7 +21,7 @@ function App() {
       <br />
       <div className="WalletInfo">
         <div>Address: {address}</div>
-        <div>Address: {balance}</div>
+        <div>Balance: {balance}</div>
       </div>
       <br />
       <Blockchain />
