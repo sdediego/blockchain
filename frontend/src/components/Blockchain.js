@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Block from './Block';
 import { API_URL } from '../config';
@@ -17,6 +18,8 @@ function Blockchain() {
 
   return (
     <div className="Blockchain">
+      <Link to="/">Home</Link>
+      <hr />
       <header className="BlockchainHeader">
         <h3>Blockchain</h3>
       </header>

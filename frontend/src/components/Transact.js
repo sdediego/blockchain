@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FormGroup, FormControl, Button } from 'react-bootstrap';
 import axios from 'axios';
 import { API_URL } from '../config';
@@ -29,7 +30,11 @@ function Transact() {
 
   return (
     <div className="Transact">
-      <h3>Conduct a Transaction</h3>
+      <Link to="/">Home</Link>
+      <hr />
+      <header className="TransactHeader">
+        <h3>Conduct a Transaction</h3>
+      </header>
       <br />
       <FormGroup>
         <FormControl input="text" placeholder="recipient" value={recipient} onChange={updateRecipient} />

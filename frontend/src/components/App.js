@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
-import Blockchain from './Blockchain';
-import Transact from './Transact';
 import { API_URL } from '../config';
 
 function App() {
@@ -19,15 +18,13 @@ function App() {
       <header className="AppHeader">
         <h3>Welcome to Blockchain</h3>
       </header>
+      <Link to="/blockchain">Blockchain</Link>
+      <Link to="/transact">Transact</Link>
       <br />
       <div className="WalletInfo">
         <div>Address: {address}</div>
         <div>Balance: {balance}</div>
       </div>
-      <br />
-      <Blockchain />
-      <br />
-      <Transact />
     </div>
   );
 }
