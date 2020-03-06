@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Blockchain from './Blockchain';
+import Transact from './Transact';
 import { API_URL } from '../config';
 
 function App() {
@@ -25,6 +26,8 @@ function App() {
       </div>
       <br />
       <Blockchain />
+      <br />
+      <Transact />
     </div>
   );
 }
