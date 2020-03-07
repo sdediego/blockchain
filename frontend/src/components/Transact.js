@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FormGroup, FormControl, Button } from 'react-bootstrap';
 import axios from 'axios';
 import { API_URL } from '../config';
+import history from '../history';
 
 function Transact() {
   const [amount, setAmount] = useState(0);
@@ -27,14 +28,14 @@ function Transact() {
   };
 
   const submitTransaction = () => {
-    axios.get(`${ API_URL }/transact`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipient, amount })
-    }).then(response => response.data)
+    const config = { headers: { 'Content-Type': 'application/json' } };
+
+    axios.post(`${ API_URL }/transact`, { recipient, amount }, config)
+      .then(response => response.data)
       .then(data => {
-        console.log('submitTransaction JSON', data);
-        alert('Success!');
+        const output = data.transaction.output;
+        alert(`Success! Transaction submitted: ${ JSON.stringify(output) }`);
+        history.push('/transactions-pool');
       });
   };
 
