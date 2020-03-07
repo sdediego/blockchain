@@ -6,6 +6,7 @@ import './index.css';
 import App from './components/App';
 import Blockchain from './components/Blockchain';
 import Transact from './components/Transact';
+import TransactionsPool from './components/TransactionsPool';
 
 ReactDOM.render(
   <Router history={createBrowserHistory()}>
@@ -13,6 +14,7 @@ ReactDOM.render(
       <Route path='/' exact component={App} />
       <Route path='/blockchain' component={Blockchain} />
       <Route path='/transact' component={Transact} />
+      <Route path='/transactions-pool' component={TransactionsPool} />
     </Switch>
   </Router>,
   document.getElementById('root')

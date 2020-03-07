@@ -20,7 +20,7 @@ body {
   margin: 2%;
 }
 
-.Blockchain, .Transact {
+.Blockchain, .Transact, .TransactionsPool {
   margin: 10%;
   margin-top: 5%;
 }
