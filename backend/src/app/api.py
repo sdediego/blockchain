@@ -79,3 +79,12 @@ async def balance():
     balance = app.wallet.balance
     logger.info(f'[API] GET balance. Address: {address}, balance: {balance}.')
     return {'address': address, 'balance': balance}
+
+@app.get('/addresses')
+async def addresses():
+    logger.info('[API] GET addresses. Retrieving known addresses.')
+    addresses = set()
+    for block in app.blockchain.chain:
+        for transaction in block.data:
+            addresses.update(transaction.get('output').keys())
+    return {'addresses': list(addresses)}

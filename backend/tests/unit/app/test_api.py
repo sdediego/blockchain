@@ -9,12 +9,17 @@ from starlette.testclient import TestClient
 
 from src.app.api import app
 from src.blockchain.models.block import Block
-from tests.unit.logging import LoggingMixin
+from src.blockchain.models.blockchain import Blockchain
+from tests.unit.blockchain.utilities import BlockchainMixin
 
 
-class ApiTest(LoggingMixin):
+class ApiTest(BlockchainMixin):
 
     def setUp(self):
+        super(ApiTest, self).setUp()
+        chain_length = random.randint(5, 10)
+        chain = self._generate_valid_chain(chain_length)
+        app.blockchain = Blockchain(chain)
         self.client = TestClient(app)
     
     def test_api_get_root_route(self):
@@ -45,13 +50,16 @@ class ApiTest(LoggingMixin):
         self.assertEqual(Block.create(**block_info), app.blockchain.last_block)
 
     @patch('src.app.api.app.p2p_server.broadcast_transaction')
-    def test_api_post_transact_route(self, mock_broadcast_transaction):
+    @patch('src.client.models.transaction.Transaction.is_valid_schema')
+    def test_api_post_transact_route(self, mock_is_valid_schema, mock_broadcast_transaction):
         mock_broadcast_transaction.return_value = asyncio.Future()
         mock_broadcast_transaction.return_value.set_result(None)
+        mock_is_valid_schema.return_value = True
         recipient = uuid.uuid4().hex
         amount = random.uniform(0, 25)
         response = self.client.post("/transact", json={"recipient": recipient, "amount": amount})
         self.assertTrue(mock_broadcast_transaction.called)
+        self.assertTrue(mock_is_valid_schema.called)
         self.assertEqual(response.status_code, 200)
         self.assertIn('transaction', response.json())
         transaction = response.json().get('transaction')
@@ -65,3 +73,11 @@ class ApiTest(LoggingMixin):
         self.assertIn('balance', response.json())
         balance = response.json().get('balance')
         self.assertEqual(balance, 0)
+
+    def test_api_get_addresses_route(self):
+        response = self.client.get("/addresses")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('addresses', response.json())
+        addresses = response.json().get('addresses')
+        self.assertIsInstance(addresses, list)
+        self.assertTrue(all([uuid.UUID(hex=address) for address in addresses]))
