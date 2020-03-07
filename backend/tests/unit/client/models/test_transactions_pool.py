@@ -17,13 +17,6 @@ class TransactionsPoolTest(ClientMixin):
         self.transactions_pool = TransactionsPool(self.pool)
         self.serialized = self.transactions_pool.serialize()
 
-    def _generate_transactions_pool(self):
-        pool = {}
-        for _ in range(random.randint(1, 10)):
-            transaction = self._generate_transaction()
-            pool.update({transaction.uuid: transaction})
-        return pool
-
     def test_transactions_pool_string_representation(self):
         uuids = list(self.transactions_pool.pool.keys())
         transactions_pool_str = str(self.transactions_pool)

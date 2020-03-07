@@ -88,3 +88,9 @@ async def addresses():
         for transaction in block.data:
             addresses.update(transaction.get('output').keys())
     return {'addresses': list(addresses)}
+
+@app.get('/transactions')
+async def transactions():
+    logger.info('[API] GET transactions. Retrieving transactions.')
+    transactions = app.transactions_pool.data
+    return {'transactions': transactions}

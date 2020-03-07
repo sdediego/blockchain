@@ -34,5 +34,12 @@ class ClientMixin(LoggingMixin):
         id = uuid.uuid4().int
         return Transaction.create(uuid=id, input=input, output=output)
 
+    def _generate_transactions_pool(self):
+        pool = {}
+        for _ in range(random.randint(1, 10)):
+            transaction = self._generate_transaction()
+            pool.update({transaction.uuid: transaction})
+        return pool
+
     def _generate_float(self, floor: float = 0, ceil: float = 100):
         return random.uniform(floor, ceil)

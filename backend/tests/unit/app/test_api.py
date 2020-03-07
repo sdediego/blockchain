@@ -10,16 +10,20 @@ from starlette.testclient import TestClient
 from src.app.api import app
 from src.blockchain.models.block import Block
 from src.blockchain.models.blockchain import Blockchain
+from src.client.models.transactions_pool import TransactionsPool
 from tests.unit.blockchain.utilities import BlockchainMixin
+from tests.unit.client.utilities import ClientMixin
 
 
-class ApiTest(BlockchainMixin):
+class ApiTest(BlockchainMixin, ClientMixin):
 
     def setUp(self):
         super(ApiTest, self).setUp()
         chain_length = random.randint(5, 10)
         chain = self._generate_valid_chain(chain_length)
+        pool = self._generate_transactions_pool()
         app.blockchain = Blockchain(chain)
+        app.transactions_pool = TransactionsPool(pool)
         self.client = TestClient(app)
     
     def test_api_get_root_route(self):
@@ -81,3 +85,11 @@ class ApiTest(BlockchainMixin):
         addresses = response.json().get('addresses')
         self.assertIsInstance(addresses, list)
         self.assertTrue(all([uuid.UUID(hex=address) for address in addresses]))
+
+    def test_api_get_transactions_route(self):
+        response = self.client.get("/transactions")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('transactions', response.json())
+        transactions = response.json().get('transactions')
+        self.assertIsInstance(transactions, list)
+        self.assertTrue(all([isinstance(transaction, dict) for transaction in transactions]))
