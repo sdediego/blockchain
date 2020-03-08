@@ -47,6 +47,6 @@ def hex_to_binary(hash: str):
     Convert hexadecimal hash string to binary.
 
     :param str hash: hexadecimal number representing hash string.
-    :return : converted hexadecimal hash string to binary.
+    :return str: converted hexadecimal hash string to binary.
     """
     return f'{int(hash, base=16):0>256b}'

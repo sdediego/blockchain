@@ -66,7 +66,7 @@ class Block(object):
         Compare two Block instances to check wether if both are the same
         block or not based on their unique hashes.
 
-        :param Block block: other block instance.
+        :param Block block: other block instance to compare with.
         :return bool: true/false on block comparison.
         """
         return self.hash == block.hash
@@ -127,6 +127,7 @@ class Block(object):
         :param str last_hash: previous block hash to link the blockchain.
         :param str hash: block data unique hash to prevent fraud.
         :return Block: new class instance.
+        :raise BlockError: on attributes validation error.
         """
         kwargs = locals().copy()
         kwargs.pop('cls')
@@ -205,7 +206,7 @@ class Block(object):
 
         :param Block last_block: current last block in the blockchain.
         :param int timestamp: new block creation UTC epoch datetime in milliseconds.
-        :return int: adjusted block difficulty
+        :return int: adjusted block difficulty.
         """
         if last_block.timestamp + BLOCK_MINING_RATE > timestamp:
             return last_block.difficulty + 1
@@ -223,15 +224,19 @@ class Block(object):
         :raise BlockError: on invalid block attributes.
         """
         cls.is_valid_schema(block.info)
-        message = None
+
+        messages = []
         if block.last_hash != last_block.hash:
             message = (f'Block {last_block.index} hash "{last_block.hash}" and '
                        f'block {block.index} last_hash "{block.last_hash}" must match.')
+            messages.append(message)
         if abs(last_block.difficulty - block.difficulty) > 1:
-            message = f'{message} ' if message else ''
-            message = (f'{message}Difficulty must differ as much by 1 between blocks: '
+            message = (f'Difficulty must differ as much by 1 between blocks: '
                        f'block {last_block.index} difficulty: {last_block.difficulty}, '
                        f'block {block.index} difficulty: {block.difficulty}.')
-        if message:
-            logger.error(f'[Block] Validation error. {message}')
-            raise BlockError(message)
+            messages.append(message)
+
+        if messages:
+            for message in messages:
+                logger.error(f'[Block] Validation error. {message}')
+            raise BlockError("\n".join(messages))

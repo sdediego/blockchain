@@ -21,7 +21,7 @@ class Blockchain(object):
     """
     Distributed inmutable ledger of blocks.
     """
-    
+
     def __init__(self, chain: list = None):
         """
         Create a new Blockchain instance.
@@ -29,7 +29,7 @@ class Blockchain(object):
         :param list chain: chain of blocks.
         """
         self.chain = chain or [Block.genesis()]
-    
+
     def __str__(self):
         """
         Represent class instance via params string.
@@ -37,7 +37,7 @@ class Blockchain(object):
         :return str: instance representation.
         """
         return f'Blockchain: [{", ".join([str(block) for block in self.chain])}]'
-    
+
     @property
     def genesis(self):
         """
@@ -55,11 +55,11 @@ class Blockchain(object):
         :return Block: last block of the blockchain.
         """
         return self.chain[-1]
-    
+
     @property
     def length(self):
         """
-        Get the blockchain length.
+        Get the blockchain chain length.
 
         :return int: blockchain length.
         """
@@ -72,7 +72,7 @@ class Blockchain(object):
         :return list: chain of stringified blocks.
         """
         return list(map(lambda block: block.serialize(), self.chain))
-    
+
     @classmethod
     def deserialize(cls, chain: list):
         """
@@ -92,6 +92,7 @@ class Blockchain(object):
 
         :param list chain: chain of blocks.
         :return Blockchain: validated blockchain.
+        :raise BlockchainError: on chain validation error.
         """
         cls.is_valid_schema(chain)
         return cls(chain)
@@ -118,6 +119,7 @@ class Blockchain(object):
         to be validated for the rest of the nodes.
 
         :param data list: transactions data to be added to the next block.
+        :return Block: new mined block.
         """
         block = Block.mine_block(self.last_block, data)
         self.chain.append(block)
@@ -150,6 +152,7 @@ class Blockchain(object):
         nodes by consensus.
 
         :param list chain: candidate chain to become the distributed chain.
+        :raise BlockchainError: on chain validation error.
         """
         cls.is_valid_schema(chain)
         cls.is_valid_transaction_data(chain)

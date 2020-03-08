@@ -151,6 +151,7 @@ class Transaction(object):
         :param str recipient: cryptocurrency recipient address.
         :param float amount: amount of cryptocurrency to exchange.
         :return Transaction: new transaction instance.
+        :raise TransactionError: on attributes validation error.
         """
         kwargs = locals().copy()
         kwargs.pop('cls')
@@ -205,6 +206,7 @@ class Transaction(object):
 
         :param Wallet wallet: miner wallet.
         :return Transaction: reward transaction.
+        :raise TransactionError: on attributes validation error.
         """
         output = {wallet.address: MINING_REWARD}
         input = MINING_REWARD_INPUT
