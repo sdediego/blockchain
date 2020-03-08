@@ -1,11 +1,29 @@
 body {
-  background-color: #fff;
-  color: #444;
+  background-color: #444;
+  color: #fff;
   text-align: center;
   font-size: 18px;
   font-family: 'Quicksand';
   padding-top: 5%;
   word-wrap: break-word;
+}
+
+a, a:hover {
+  color: #e66;
+  text-decoration: underline;
+}
+
+input, button {
+  font-size: 14px;
+  color: black;
+  margin: 1%;
+  padding: 1%;
+}
+
+.Addresses {
+  list-style: none;
+  padding-left: 0;
+  text-decoration: none;
 }
 
 .App {
@@ -15,20 +33,26 @@ body {
 }
 
 .Block {
-  border: 1px solid #444;
-  padding: 10%;
+  border: 1px solid #fff;
+  padding: 5%;
   margin: 2%;
 }
 
 .Blockchain, .Transact, .TransactionsPool {
-  margin: 10%;
-  margin-top: 5%;
+  margin: 25%;
+  margin-top: 1%;
+}
+
+.logo {
+  width: 50%;
+  height: auto;
 }
 
 .Transaction {
-  padding: 5%;
+  padding: 1%;
 }
 
 .WalletInfo {
-  width: 500px;
+  margin: 2%;
+  width: 100%;
 }

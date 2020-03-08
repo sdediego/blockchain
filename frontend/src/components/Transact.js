@@ -44,7 +44,7 @@ function Transact() {
       <Link to="/">Home</Link>
       <hr />
       <header className="TransactHeader">
-        <h3>Conduct a Transaction</h3>
+        <h3>Make Transaction</h3>
       </header>
       <br />
       <FormGroup>
@@ -59,9 +59,9 @@ function Transact() {
       <br />
       <h4>Addresses</h4>
       <div>
-        {addresses.map((address, index) => {
-          return <span key={address}><u>{address}</u>{index !== addresses.length - 1 ? ', ' : ''}</span>;
-        })}
+        <ul className="Addresses">
+          {addresses.map((address, index) => <span key={address}><li>{address}</li></span>)}
+        </ul>
       </div>
     </div>
   );
