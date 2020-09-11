@@ -6,7 +6,7 @@ from os.path import dirname, join
 
 from fastapi import FastAPI
 
-from src.app.middlewares import CORSMiddleware
+from src.app.middlewares import CORSMiddleware, RequestIDMiddleware
 from src.app.p2p_server import P2PServer
 from src.blockchain.models.blockchain import Blockchain
 from src.client.models.transaction import Transaction
@@ -21,6 +21,7 @@ logger = getLogger(__name__)
 app = FastAPI(__name__)
 
 app.add_middleware(CORSMiddleware)
+app.add_middleware(RequestIDMiddleware)
 
 app.blockchain = Blockchain()
 app.wallet = Wallet(app.blockchain)
