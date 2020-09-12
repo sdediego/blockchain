@@ -3,7 +3,7 @@
 import uuid
 
 from fastapi import Request as BaseRequest
-from starlette.datastructure import Headers
+from starlette.datastructures import Headers
 
 
 class Request(BaseRequest):

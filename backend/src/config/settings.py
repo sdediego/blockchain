@@ -18,9 +18,15 @@ GENESIS_BLOCK = {
 GENESIS_BLOCK['hash'] = hash_block(*GENESIS_BLOCK.values())
 
 # API Server
-origins = [
+ORIGINS = [
     "http://localhost:3000",
 ]
+CORS_MIDDLEWARE_PARAMS = {
+    'allow_origins': ORIGINS,
+    'allow_credentials': True,
+    'allow_methods': ['GET', 'POST'],
+    'allow_headers': ['*']
+}
 
 # P2P Server
 HEARTBEAT_RATE = 5  # seconds

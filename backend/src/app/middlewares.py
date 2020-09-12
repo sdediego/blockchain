@@ -1,24 +1,16 @@
 # encoding: utf-8
 
+from logging import getLogger
+from logging.config import fileConfig
+from os.path import dirname, join
+
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.middleware.cors import CORSMiddleware as BaseCORSMiddleware
 
 from src.app.request import Request
-from src.config.settings import origins
 
-
-class CORSMiddleware(BaseCORSMiddleware):
-    """
-    API Server middleware to implemente CORS specifications for 
-    secure cross-domain access control.
-    """
-
-    def __init__(self):
-        """
-        Create a new CORSMiddleware instance.
-        """
-        super(CORSMiddleware, self).__init__(allow_origins=origins, allow_credentials=True,
-                                             allow_methods=['GET', 'POST'], allow_headers=['*'])
+# Custom logger for middlewares module
+fileConfig(join(dirname(dirname(__file__)), 'config', 'logging.cfg'))
+logger = getLogger(__name__)
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -30,3 +22,14 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         request = Request(request.scope, request.receive)
         return call_next(request)
+
+
+class RequestLogMiddleware(BaseHTTPMiddleware):
+    """
+    """
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        logger.info(f'[API] {request.method}. Request to {request.url}.')
+        response = await call_next(request)
+        logger.info(f'Response with status {response.status_code}.')
+        return response
