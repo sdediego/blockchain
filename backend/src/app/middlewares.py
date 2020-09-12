@@ -21,15 +21,17 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         request = Request(request.scope, request.receive)
-        return call_next(request)
+        return await call_next(request)
 
 
 class RequestLogMiddleware(BaseHTTPMiddleware):
     """
+    API Server middleware to log incoming requests and their
+    response status.
     """
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        logger.info(f'[API] {request.method}. Request to {request.url}.')
+        logger.info(f'[API] {request.method}. Request made to {request.url}.')
         response = await call_next(request)
-        logger.info(f'Response with status {response.status_code}.')
+        logger.info(f'[API] Response status {response.status_code}.')
         return response

@@ -4,11 +4,12 @@ from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from src.app.middlewares import RequestIDMiddleware, RequestLogMiddleware
 from src.app.p2p_server import P2PServer
+from src.app.route import APIRoute
 from src.blockchain.models.blockchain import Blockchain
 from src.client.models.transaction import Transaction
 from src.client.models.transactions_pool import TransactionsPool
@@ -21,6 +22,7 @@ logger = getLogger(__name__)
 
 
 app = FastAPI()
+router = APIRouter(route_class=APIRoute)
 
 app.add_middleware(CORSMiddleware, **CORS_MIDDLEWARE_PARAMS)
 app.add_middleware(RequestIDMiddleware)
@@ -31,17 +33,17 @@ app.wallet = Wallet(app.blockchain)
 app.transactions_pool = TransactionsPool()
 app.p2p_server = P2PServer(app.blockchain, app.transactions_pool)
 
-@app.get('/')
+@router.get('/')
 async def root():
     logger.info('[API] GET root.')
     return "Blockchain app is running"
 
-@app.get('/blockchain')
+@router.get('/blockchain')
 async def blockchain():
     logger.info('[API] GET blockchain.')
     return {'blockchain': app.blockchain}
 
-@app.get('/mine')
+@router.get('/mine')
 async def mine_block():
     logger.info('[API] GET mine. Mining block.')
     transaction_reward = Transaction.reward_mining(app.wallet)
@@ -53,7 +55,7 @@ async def mine_block():
     app.transactions_pool.clear_pool(app.blockchain)
     return {'block': block}
 
-@app.post('/transact')
+@router.post('/transact')
 async def transact(data: dict):
     logger.info('[API] POST transact. New transaction.')
     recipient = data.get('recipient')
@@ -69,7 +71,7 @@ async def transact(data: dict):
     await app.p2p_server.broadcast_transaction(transaction)
     return {'transaction': transaction}
 
-@app.get('/balance')
+@router.get('/balance')
 async def balance():
     logger.info('[API] GET balance. Calculating balance.')
     address = app.wallet.address
@@ -77,7 +79,7 @@ async def balance():
     logger.info(f'[API] GET balance. Address: {address}, balance: {balance}.')
     return {'address': address, 'balance': balance}
 
-@app.get('/addresses')
+@router.get('/addresses')
 async def addresses():
     logger.info('[API] GET addresses. Retrieving known addresses.')
     addresses = set()
@@ -86,8 +88,10 @@ async def addresses():
             addresses.update(transaction.get('output').keys())
     return {'addresses': list(addresses)}
 
-@app.get('/transactions')
+@router.get('/transactions')
 async def transactions():
     logger.info('[API] GET transactions. Retrieving transactions.')
     transactions = app.transactions_pool.data
     return {'transactions': transactions}
+
+app.include_router(router)
