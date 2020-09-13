@@ -34,8 +34,8 @@ class BlockchainApp(object):
         self.app = app
         self.app.host = args.api_host
         self.app.port = args.api_port
-        self.app.p2p_server.bind(args.p2p_host, args.p2p_port)
-        self.app.p2p_server.add_uris(nodes)
+        self.app.router.p2p_server.bind(args.p2p_host, args.p2p_port)
+        self.app.router.p2p_server.add_uris(nodes)
 
     async def start_api_server(self):
         """
@@ -52,16 +52,16 @@ class BlockchainApp(object):
 
         :return WebSocketServer: Blockchain backend peer-to-peer server.
         """
-        logger.info(f'[BlockchainApp] Blockchain P2P server running on port {self.app.p2p_server.port}.')
-        return await self.app.p2p_server.start()
+        logger.info(f'[BlockchainApp] Blockchain P2P server running on port {self.app.router.p2p_server.port}.')
+        return await self.app.router.p2p_server.start()
 
     async def start_p2p_heartbeat(self):
         """
         Start blockchain application backend peer-to-peer server beat.
         """
         logger.info(f'[BlockchainApp] Blockchain P2P server heartbeat up.')
-        await self.app.p2p_server.connect_nodes()
-        await self.app.p2p_server.heartbeat()
+        await self.app.router.p2p_server.connect_nodes()
+        await self.app.router.p2p_server.heartbeat()
 
     def run(self):
         """
